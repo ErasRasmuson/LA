@@ -1,7 +1,7 @@
 
 ECHO OFF
 
-SET MY_PATH=D:\MyProjects\LogAnalyze
+SET MY_PATH=D:\MyProjects\LA
 
 SET SCRIPT_PATH=%MY_PATH%\LogGen\
 SET OUTPUT_PATH=%MY_PATH%\LogFile\PreProsessed\
