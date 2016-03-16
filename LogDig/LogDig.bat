@@ -1,7 +1,7 @@
 
 ECHO OFF
 
-SET MY_PATH=D:\MyProjects\LogAnalyze
+SET MY_PATH=D:\MyProjects\LA
 
 SET SCRIPT_PATH=%MY_PATH%\LogDig\
 SET LOGS_PATH=%MY_PATH%\LogFile\PreProsessed\TLG_1\
