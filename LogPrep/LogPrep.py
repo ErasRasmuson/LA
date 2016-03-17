@@ -1,0 +1,347 @@
+# -*- coding: cp1252 -*-
+"""
+###############################################################################
+HEADER: 	LogPrep.py    
+
+AUTHOR:     Esa Heikkinen
+DATE:       24.10.2014
+DOCUMENT:   - 
+VERSION:    "$Id$"
+REFERENCES: -
+PURPOSE:    
+CHANGES:    "$Log$"
+###############################################################################
+"""
+
+import argparse
+import os.path
+import sys
+import time
+import re
+from datetime import datetime
+from LogPrepColOpers import *
+import glob
+
+g_version = "$Id$"
+
+#******************************************************************************
+#       
+#	CLASS:	LogFile
+#
+#******************************************************************************
+class LogFile:
+
+	global variables
+	global date
+	
+	name = "Unknown"
+	output_lines = []
+	columns_list = []
+	column_new_list = []
+	columns_oper = []
+	columns_new_oper = {}
+	line_csv = ""
+	
+	def __init__(self,name):
+		self.name=name
+		self.output_lines = []
+		self.columns_list = []
+		self.column_new_list = []
+		self.columns_oper = []
+		self.columns_new_oper = {}
+		self.line_csv = ""
+		
+	def check_conversions(self):
+		
+		# K‰yd‰‰n sarakemuutokset l‰pi
+		counter = 0
+		
+		for col_oper_output in self.columns_new_oper.keys():
+			
+			counter += 1
+			col_oper = self.columns_new_oper[col_oper_output]
+			
+			# Suoritetaan sarakemuutos riville
+			code_str = compile(col_oper,"<string>","eval")
+			try:
+				variables[col_oper_output] = eval(code_str)
+			except:
+				print("ERR: Executing: \"%s\"\n" % col_oper)
+				sys.exit()
+			
+			#print("%3d: %-15s = %s = %s" % (counter,col_oper_output,col_oper,variables[col_oper_output]))
+		
+	def set_columns_conversions(self,columns_list,columns_oper):
+	
+		self.columns_list = columns_list
+		self.columns_oper = columns_oper
+		
+		self.columns_new_oper = {}
+		
+		# K‰yd‰‰n sarake-operaattorit l‰pi
+		for column_oper in self.columns_oper:
+			print("column_oper: %s" % column_oper)
+			
+			columns_oper_list = column_oper.split("=")
+			columns_oper_list_len = len(columns_oper_list)
+			if columns_oper_list_len != 2:
+				print("ERR: in column_oper: %s" % column_oper) 
+				continue
+			
+			# Erotetaan output-muuttuja (sarake) sek‰ sen funktio ja input-muuttujat
+			output_var = columns_oper_list[0]
+			oper_func_vars = columns_oper_list[1]
+			
+			output_var = output_var.strip("<>")
+			
+			# Tukitaan onko uusi sarake ja jos on, lis‰t‰‰n muuttujiin ja sarakelistaan
+			if not output_var in self.columns_list:
+				print("New column: %s" % output_var)
+				variables[output_var]=""
+				self.column_new_list.append(output_var)
+					
+			# Etsit‰‰n rivilt‰ sarakkeiden (muuttujien) nimet,
+			# jotka "<"- ja ">"-merkkien sis‰ll‰
+			str_len = len(oper_func_vars)
+			start_ptr = 0
+			end_ptr = 0
+			new_str = oper_func_vars
+			while end_ptr < str_len:
+			
+				start_ptr = new_str.find('<',end_ptr)
+				if start_ptr == -1:
+					#print("Not found: <")
+					break
+				start_ptr += 1
+				end_ptr = new_str.find('>',start_ptr)
+				if end_ptr == -1:
+					#print("Not found: >")
+					break
+					
+				col_name = new_str[start_ptr:end_ptr]
+				
+				print("col_name : %s" % (col_name) )
+				#print("str_len = %d, start_ptr=%d, end_ptr=%d" % (str_len,start_ptr,end_ptr))
+				
+				# Korvataan sarakkeen nimet muuttujanimill‰
+				col_name_str = "<" + col_name + ">"
+				col_name_var_str = "variables[\"" + col_name + "\"]"
+				new_str = new_str.replace(col_name_str,col_name_var_str)
+				str_len = len(new_str)
+				
+			self.columns_new_oper[output_var] = new_str
+			
+			print("new_str = %s" % new_str)
+			
+	#def read(self,logfile_name,regexps,columns_list):
+	def read(self,logfile_name,regexps,output_sep_char):
+	
+		#self.columns_list = columns_list
+		
+		print("")
+		
+		vars_list_len = len(self.columns_list)
+		
+		print("LogFile: read logfile_name: %s" % logfile_name)
+
+		# Luetaan lokitiedosto
+		if os.path.isfile(logfile_name):
+		
+			f = open(logfile_name, 'r')
+			lines = f.readlines()
+			f.close()
+			
+			line_counter = 0
+			line_sel_counter = 0
+			error_counter = 0
+			
+			# Kaydaan lapi loki-tiedoston rivit
+			for line in lines:
+			
+				# Hyl‰t‰‰n tyhj‰t rivit
+				if len(line) < 2:
+					continue
+			
+				line_counter += 1
+				
+				#print("LogFile: line: %5d: %s" % (line_counter,line))
+				
+				# Parseroidaan tiedoston rivi ja sijoitetaan arvot v‰limuuttujiin
+				p = re.compile(regexps)
+				m = p.match(line)
+				#print("m: %s" % (m))
+				if m != None:
+					line_sel_counter += 1
+					#print("")
+					for cnt in range(vars_list_len):
+						var_name = self.columns_list[cnt]
+						var_value = m.group(cnt+1)
+						variables[var_name]=var_value
+						#print("%5d: Var name: %-20s value: %s" % (cnt,var_name,var_value))
+						
+					# Tehd‰‰n mahdolliset sarakkeiden konversiot
+					self.check_conversions()
+					
+					# K‰yd‰‰n rivin sarakkeet l‰pi
+					column_list_all = self.columns_list + self.column_new_list
+					self.line_csv = ""
+					for	col_name in column_list_all:
+						
+						col_val = variables[col_name]
+						
+						# Lis‰t‰‰n arvo tulostiedoston (csv) rivin loppuun
+						#self.line_csv = self.line_csv + "\t" + col_val
+						self.line_csv = self.line_csv + output_sep_char + col_val
+
+					# Laitetaan tulostiedoston rivi talteen
+					self.output_lines.append(self.line_csv)
+					
+			print("LogFile: Msg-type         = %s" % self.name)
+			print("LogFile: line_counter     = %d" % line_counter)
+			print("LogFile: line_sel_counter = %d" % line_sel_counter)
+			
+		else:
+			print("LogFile: ERR: Not found logfile: %s" % logfile_name)
+	
+	def get(self):
+		print("")
+		return self.output_lines
+		
+	def get_columns(self):
+		print("")
+		
+		#print("self.columns_list = %s" % self.columns_list)
+		#print("self.column_new_list = %s" % self.column_new_list)
+		
+		return self.columns_list + self.column_new_list
+	
+#******************************************************************************
+#       
+#	FUNCTION:	make_dir_if_no_exist
+#
+#******************************************************************************	
+def make_dir_if_no_exist(file_path_name):
+	# Python3
+	#os.makedirs(os.path.dirname(file_path_name), exist_ok=True)
+
+	# Python2
+	if not os.path.exists(os.path.dirname(file_path_name)):
+		try:
+			os.makedirs(os.path.dirname(file_path_name))
+		except OSError as exc:
+			if exc.errno != errno.EEXIST:
+				raise
+
+#******************************************************************************
+#       
+#	FUNCTION:	main
+#
+#******************************************************************************
+
+print("version: %s" % g_version)
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-input_path','--input_path', dest='input_path', help='input_path')
+parser.add_argument('-input_files','--input_files', dest='input_files', help='input_files')
+parser.add_argument('-output_path','--output_path', dest='output_path', help='output_path')
+parser.add_argument('-output_sep_char','--output_sep_char', dest='output_sep_char', help='output_sep_char')
+parser.add_argument('-date','--date', dest='date', help='date')
+parser.add_argument('-msg_type','--msg_type', dest='msg_type', help='msg_type')
+parser.add_argument('-column_name_prefix','--column_name_prefix', dest='column_name_prefix', help='column_name_prefix')
+parser.add_argument('-columns','--columns', dest='columns', help='columns')
+parser.add_argument('-regexps','--regexps', dest='regexps', help='regexps')
+parser.add_argument('-column_oper','--column_oper', action='append', dest='column_oper', default=[], help='column_oper')
+
+args = parser.parse_args()
+
+print("input_path         : %s" % args.input_path)
+print("input_files        : %s" % args.input_files)
+print("output_path        : %s" % args.output_path)
+print("output_sep_char    : \"%s\"" % args.output_sep_char)
+print("date               : %s" % args.date)
+print("msg_type           : %s" % args.msg_type)
+print("column_name_prefix : %s" % args.column_name_prefix)
+print("columns            : %s" % args.columns)
+print("regexps            : %s" % args.regexps)
+print("column_oper        : %s" % args.column_oper)
+
+# Muodostetaan input-tiedostojen lista polkuineen
+logfile_name_list = []
+input_files_list = args.input_files.split(",")
+for input_file in input_files_list:
+	input_file_path_name_list = glob.glob(args.input_path + input_file)
+	for input_file_path_name in input_file_path_name_list:
+		print("input_file_path_name = %s" % input_file_path_name)
+		logfile_name_list.append(input_file_path_name) 
+
+#print("logfile_name_list = %s" % logfile_name_list)
+print("\n")
+
+date = args.date
+
+# K‰yd‰‰n l‰pi input-tiedosto(t)
+for logfile_name in logfile_name_list:
+
+	variables = {}
+
+	msg_type = args.msg_type
+	#print("msg_type = \"%s\"" % msg_type)
+	
+	print("logfile_name = \"%s\"" % logfile_name)
+	
+	# Output-file path and name
+	head, tail = os.path.split(logfile_name)
+	#print("head=%s, tail=%s" % (head,tail))
+	file_name, file_ext =tail.split(".")
+	
+	logfile_new_name = args.output_path + file_name + "_" + msg_type + ".csv"
+	
+	print("logfile_new_name = \"%s\"" % logfile_new_name)
+	
+	#state_search_string = state_search_strings[msg_type]
+	regexps = args.regexps
+	
+	#columns_list = state_search_string_variables[msg_type]
+	columns_list = args.columns.split(",")
+	
+	#print("regexps = \"%s\"" % regexps)
+	#print("columns_list = \"%s\"" % columns_list)
+	
+	log_file = LogFile(msg_type)
+	log_file.set_columns_conversions(columns_list,args.column_oper)
+	#log_file.read(logfile_name,regexps,columns_list)
+	log_file.read(logfile_name,regexps,args.output_sep_char)
+	
+	# Haetaan uusi sarakelista (jos tullut uusia tai jotain poistettu)
+	columns_new_list = log_file.get_columns()
+	
+	#print("columns_new_list = %s" % columns_new_list)
+	
+	# Kirjoitetaan tiedostoon
+	output_lines = log_file.get()
+	line_cnt = 0
+	make_dir_if_no_exist(logfile_new_name)
+	f = open(logfile_new_name, 'w')
+
+	# Otsikko
+	f.writelines("%sCounter" % args.column_name_prefix)
+	for col_name in columns_new_list:
+	
+		# Lis‰t‰‰n prefix sarakkeiden nimien alkuun
+		column_name_with_prefix = args.column_name_prefix + col_name 
+	
+		#f.writelines("\t" + col_name)
+		f.writelines(args.output_sep_char + column_name_with_prefix)
+		
+	f.writelines("\n")
+	
+	# Rivit
+	for output_line in output_lines:
+		line_cnt += 1
+		str = "%d %s\n" % (line_cnt,output_line)
+		#print("%s" % str)
+		f.writelines(str)
+		
+	f.close()
+
+
