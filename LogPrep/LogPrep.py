@@ -18,7 +18,7 @@ import os.path
 import sys
 import time
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from LogPrepColOpers import *
 import glob
 
@@ -132,12 +132,30 @@ class LogFile:
 			self.columns_new_oper[output_var] = new_str
 			
 			print("new_str = %s" % new_str)
-			
-	#def read(self,logfile_name,regexps,columns_list):
-	def read(self,logfile_name,regexps,output_sep_char):
 	
-		#self.columns_list = columns_list
+	def read_column_names(self,logfile_name,output_sep_char):
+
+		#print("LogFile: read_column_names: %s" % logfile_name)
+
+		cols_list = []
+
+		# Luetaan 1. rivi lokitiedostosta
+		if os.path.isfile(logfile_name):
 		
+			f = open(logfile_name, 'r')
+			line = f.readline()
+			# Rivinvaihto ja muut tyhjät merkit rivin lopusta pois
+			line = line.rstrip()
+			f.close()
+
+			if len(line) > 2:
+				cols_list = line.split(output_sep_char)
+
+		#print("read_column_names: cols_list: %s" % cols_list)
+		return cols_list
+
+	def read(self,logfile_name,regexps,output_sep_char):
+
 		print("")
 		
 		vars_list_len = len(self.columns_list)
@@ -162,40 +180,54 @@ class LogFile:
 				if len(line) < 2:
 					continue
 			
+				# Rivinvaihto ja muut tyhjät merkit rivin lopusta pois
+				line = line.rstrip()
+
 				line_counter += 1
 				
 				#print("LogFile: line: %5d: %s" % (line_counter,line))
 				
-				# Parseroidaan tiedoston rivi ja sijoitetaan arvot välimuuttujiin
-				p = re.compile(regexps)
-				m = p.match(line)
-				#print("m: %s" % (m))
-				if m != None:
+				# Jos regexp annettu (riviltä pitää parsia arvot)
+				if len(regexps) > 0:
+
+					# Parseroidaan tiedoston rivi ja sijoitetaan arvot välimuuttujiin
+					p = re.compile(regexps)
+					m = p.match(line)
+					#print("m: %s" % (m))
+					if m != None:
+						line_sel_counter += 1
+						#print("")
+						for cnt in range(vars_list_len):
+							var_name = self.columns_list[cnt]
+							var_value = m.group(cnt+1)
+							variables[var_name]=var_value
+							#print("%5d: Var name: %-20s value: %s" % (cnt,var_name,var_value))
+						
+						self.generate_new_line(variables,output_sep_char)
+
+				# Muuten, arvot ovat valmiina csv-tyyppisellä rivillä
+				else:
+
+					# Ei käsitellä otsikko riviä
+					if line_counter == 1:
+						continue
+
+					columns_value_list = line.split(output_sep_char)
+					vars_value_list_len = len(columns_value_list) 
+					if vars_value_list_len != vars_list_len:
+						 print("ERR: Number of columns: %s and %s are different in line: %s" % 
+						 	(vars_value_list_len,vars_list_len,line))
+						 sys.exit()
+
 					line_sel_counter += 1
-					#print("")
 					for cnt in range(vars_list_len):
 						var_name = self.columns_list[cnt]
-						var_value = m.group(cnt+1)
+						var_value = columns_value_list[cnt]
 						variables[var_name]=var_value
 						#print("%5d: Var name: %-20s value: %s" % (cnt,var_name,var_value))
-						
-					# Tehdään mahdolliset sarakkeiden konversiot
-					self.check_conversions()
-					
-					# Käydään rivin sarakkeet läpi
-					column_list_all = self.columns_list + self.column_new_list
-					self.line_csv = ""
-					for	col_name in column_list_all:
-						
-						col_val = variables[col_name]
-						
-						# Lisätään arvo tulostiedoston (csv) rivin loppuun
-						#self.line_csv = self.line_csv + "\t" + col_val
-						self.line_csv = self.line_csv + output_sep_char + col_val
 
-					# Laitetaan tulostiedoston rivi talteen
-					self.output_lines.append(self.line_csv)
-					
+					self.generate_new_line(variables,output_sep_char)
+
 			print("LogFile: Msg-type         = %s" % self.name)
 			print("LogFile: line_counter     = %d" % line_counter)
 			print("LogFile: line_sel_counter = %d" % line_sel_counter)
@@ -215,6 +247,25 @@ class LogFile:
 		
 		return self.columns_list + self.column_new_list
 	
+	def generate_new_line(self,variables,output_sep_char):
+
+		# Tehdään mahdolliset sarakkeiden konversiot
+		self.check_conversions()
+		
+		# Käydään rivin sarakkeet läpi
+		column_list_all = self.columns_list + self.column_new_list
+		self.line_csv = ""
+		for	col_name in column_list_all:
+			
+			col_val = variables[col_name]
+			
+			# Lisätään arvo tulostiedoston (csv) rivin loppuun
+			self.line_csv = self.line_csv + output_sep_char + col_val
+
+		# Laitetaan tulostiedoston rivi talteen
+		self.output_lines.append(self.line_csv)
+
+
 #******************************************************************************
 #       
 #	FUNCTION:	make_dir_if_no_exist
@@ -240,9 +291,12 @@ def make_dir_if_no_exist(file_path_name):
 
 print("version: %s" % g_version)
 
+start_time = time.time()
+
 parser = argparse.ArgumentParser()
 parser.add_argument('-input_path','--input_path', dest='input_path', help='input_path')
 parser.add_argument('-input_files','--input_files', dest='input_files', help='input_files')
+parser.add_argument('-combine_input_files','--combine_input_files', dest='combine_input_files', help='input_files')
 parser.add_argument('-output_path','--output_path', dest='output_path', help='output_path')
 parser.add_argument('-output_sep_char','--output_sep_char', dest='output_sep_char', help='output_sep_char')
 parser.add_argument('-date','--date', dest='date', help='date')
@@ -250,6 +304,7 @@ parser.add_argument('-msg_type','--msg_type', dest='msg_type', help='msg_type')
 parser.add_argument('-column_name_prefix','--column_name_prefix', dest='column_name_prefix', help='column_name_prefix')
 parser.add_argument('-columns','--columns', dest='columns', help='columns')
 parser.add_argument('-regexps','--regexps', dest='regexps', help='regexps')
+parser.add_argument('-file_ind_column','--file_ind_column', dest='file_ind_column', help='file_ind_column')
 parser.add_argument('-column_oper','--column_oper', action='append', dest='column_oper', default=[], help='column_oper')
 
 args = parser.parse_args()
@@ -264,6 +319,11 @@ print("column_name_prefix : %s" % args.column_name_prefix)
 print("columns            : %s" % args.columns)
 print("regexps            : %s" % args.regexps)
 print("column_oper        : %s" % args.column_oper)
+
+if args.combine_input_files:
+	print("combine_input_files")
+if args.file_ind_column:
+	print("file_ind_column    : %s" % args.file_ind_column)
 
 # Muodostetaan input-tiedostojen lista polkuineen
 logfile_name_list = []
@@ -302,13 +362,27 @@ for logfile_name in logfile_name_list:
 	regexps = args.regexps
 	
 	#columns_list = state_search_string_variables[msg_type]
-	columns_list = args.columns.split(",")
-	
+
+	log_file = LogFile(msg_type)
+
+	# Jos sarakenimet on annettu komentoriviltä
+	if len(args.columns) > 0:
+		columns_list = args.columns.split(",")
+
+	# Muuten haetaan sarakenimet tiedoston ekalta riviltä 
+	else:
+		# Haetaan tiedoston ekalta riviltä sarakenimet
+		columns_list = log_file.read_column_names(logfile_name,args.output_sep_char)
+
+	if len(columns_list) == 0:
+		print("ERR: Not found column names from parameter or file")
+		sys.exit()
+
 	#print("regexps = \"%s\"" % regexps)
 	#print("columns_list = \"%s\"" % columns_list)
 	
-	log_file = LogFile(msg_type)
 	log_file.set_columns_conversions(columns_list,args.column_oper)
+
 	#log_file.read(logfile_name,regexps,columns_list)
 	log_file.read(logfile_name,regexps,args.output_sep_char)
 	
@@ -344,4 +418,4 @@ for logfile_name in logfile_name_list:
 		
 	f.close()
 
-
+print(" Total execution time: %.3f seconds\n" % (time.time() - start_time))
