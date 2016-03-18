@@ -24,6 +24,9 @@ import glob
 
 g_version = "$Id$"
 
+
+output_lines = []
+
 #******************************************************************************
 #       
 #	CLASS:	LogFile
@@ -35,7 +38,7 @@ class LogFile:
 	global date
 	
 	name = "Unknown"
-	output_lines = []
+	#output_lines = []
 	columns_list = []
 	column_new_list = []
 	columns_oper = []
@@ -154,7 +157,7 @@ class LogFile:
 		#print("read_column_names: cols_list: %s" % cols_list)
 		return cols_list
 
-	def read(self,logfile_name,regexps,output_sep_char):
+	def read(self,logfile_name,regexps,output_sep_char,input_read_mode):
 
 		print("")
 		
@@ -285,6 +288,38 @@ def make_dir_if_no_exist(file_path_name):
 
 #******************************************************************************
 #       
+#	FUNCTION:	write_output_file
+#
+#******************************************************************************	
+def write_output_file(logfile_new_name,output_lines,column_name_prefix,output_sep_char):
+
+	line_cnt = 0
+	make_dir_if_no_exist(logfile_new_name)
+	f = open(logfile_new_name, 'w')
+
+	# Otsikko
+	f.writelines("%sCounter" % column_name_prefix)
+	for col_name in columns_new_list:
+	
+		# Lis‰t‰‰n prefix sarakkeiden nimien alkuun
+		column_name_with_prefix = column_name_prefix + col_name 
+	
+		#f.writelines("\t" + col_name)
+		f.writelines(output_sep_char + column_name_with_prefix)
+		
+	f.writelines("\n")
+	
+	# Rivit
+	for output_line in output_lines:
+		line_cnt += 1
+		str = "%d %s\n" % (line_cnt,output_line)
+		#print("%s" % str)
+		f.writelines(str)
+		
+	f.close()
+
+#******************************************************************************
+#       
 #	FUNCTION:	main
 #
 #******************************************************************************
@@ -296,34 +331,34 @@ start_time = time.time()
 parser = argparse.ArgumentParser()
 parser.add_argument('-input_path','--input_path', dest='input_path', help='input_path')
 parser.add_argument('-input_files','--input_files', dest='input_files', help='input_files')
-parser.add_argument('-combine_input_files','--combine_input_files', dest='combine_input_files', help='input_files')
+parser.add_argument('-input_read_mode','--input_read_mode', dest='input_read_mode', help='input_read_mode')
+parser.add_argument('-combined_file_name','--combined_file_name', dest='combined_file_name', help='combined_file_name')
 parser.add_argument('-output_path','--output_path', dest='output_path', help='output_path')
+parser.add_argument('-output_files_divide_col','--output_files_divide_col', dest='output_files_divide_col', help='output_files_divide_col')
 parser.add_argument('-output_sep_char','--output_sep_char', dest='output_sep_char', help='output_sep_char')
 parser.add_argument('-date','--date', dest='date', help='date')
 parser.add_argument('-msg_type','--msg_type', dest='msg_type', help='msg_type')
 parser.add_argument('-column_name_prefix','--column_name_prefix', dest='column_name_prefix', help='column_name_prefix')
 parser.add_argument('-columns','--columns', dest='columns', help='columns')
 parser.add_argument('-regexps','--regexps', dest='regexps', help='regexps')
-parser.add_argument('-file_ind_column','--file_ind_column', dest='file_ind_column', help='file_ind_column')
 parser.add_argument('-column_oper','--column_oper', action='append', dest='column_oper', default=[], help='column_oper')
 
 args = parser.parse_args()
 
-print("input_path         : %s" % args.input_path)
-print("input_files        : %s" % args.input_files)
-print("output_path        : %s" % args.output_path)
-print("output_sep_char    : \"%s\"" % args.output_sep_char)
-print("date               : %s" % args.date)
-print("msg_type           : %s" % args.msg_type)
-print("column_name_prefix : %s" % args.column_name_prefix)
-print("columns            : %s" % args.columns)
-print("regexps            : %s" % args.regexps)
-print("column_oper        : %s" % args.column_oper)
+print("input_path              : %s" % args.input_path)
+print("input_files             : %s" % args.input_files)
+print("input_read_mode         : %s" % args.input_read_mode)
+print("combined_file_name      : %s" % args.combined_file_name)
+print("output_path             : %s" % args.output_path)
+print("output_files_divide_col : %s" % args.output_files_divide_col)
+print("output_sep_char         : \"%s\"" % args.output_sep_char)
+print("date                    : %s" % args.date)
+print("msg_type                : %s" % args.msg_type)
+print("column_name_prefix      : %s" % args.column_name_prefix)
+print("columns                 : %s" % args.columns)
+print("regexps                 : %s" % args.regexps)
+print("column_oper             : %s" % args.column_oper)
 
-if args.combine_input_files:
-	print("combine_input_files")
-if args.file_ind_column:
-	print("file_ind_column    : %s" % args.file_ind_column)
 
 # Muodostetaan input-tiedostojen lista polkuineen
 logfile_name_list = []
@@ -384,38 +419,32 @@ for logfile_name in logfile_name_list:
 	log_file.set_columns_conversions(columns_list,args.column_oper)
 
 	#log_file.read(logfile_name,regexps,columns_list)
-	log_file.read(logfile_name,regexps,args.output_sep_char)
+	log_file.read(logfile_name,regexps,args.output_sep_char,args.input_read_mode)
 	
 	# Haetaan uusi sarakelista (jos tullut uusia tai jotain poistettu)
 	columns_new_list = log_file.get_columns()
 	
 	#print("columns_new_list = %s" % columns_new_list)
 	
-	# Kirjoitetaan tiedostoon
-	output_lines = log_file.get()
-	line_cnt = 0
-	make_dir_if_no_exist(logfile_new_name)
-	f = open(logfile_new_name, 'w')
+	if args.input_read_mode == None:
 
-	# Otsikko
-	f.writelines("%sCounter" % args.column_name_prefix)
-	for col_name in columns_new_list:
-	
-		# Lis‰t‰‰n prefix sarakkeiden nimien alkuun
-		column_name_with_prefix = args.column_name_prefix + col_name 
-	
-		#f.writelines("\t" + col_name)
-		f.writelines(args.output_sep_char + column_name_with_prefix)
-		
-	f.writelines("\n")
-	
-	# Rivit
-	for output_line in output_lines:
-		line_cnt += 1
-		str = "%d %s\n" % (line_cnt,output_line)
-		#print("%s" % str)
-		f.writelines(str)
-		
-	f.close()
+		# Kirjoitetaan tiedostoon
+		output_lines = log_file.get()
+		write_output_file(logfile_new_name,output_lines,args.column_name_prefix,args.output_sep_char)
+
+	elif args.input_read_mode == "COMBINE":
+		print("COMBINE")
+		output_lines += log_file.get()
+
+	else:
+		print("ERR: Unknown read mode: %s" % args.input_read_mode)
+		sys.exit()
+
+if args.input_read_mode == "COMBINE":
+
+	logfile_new_name = args.output_path + args.combined_file_name + "_" + args.msg_type + ".csv"
+	# Kirjoitetaan tiedostoon
+	write_output_file(logfile_new_name,output_lines,args.column_name_prefix,args.output_sep_char)
+
 
 print(" Total execution time: %.3f seconds\n" % (time.time() - start_time))
