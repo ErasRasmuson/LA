@@ -26,6 +26,8 @@ g_version = "$Id$"
 
 
 output_lines = []
+output_col_lines = {}
+divide_col_values = {}
 
 #******************************************************************************
 #       
@@ -157,7 +159,7 @@ class LogFile:
 		#print("read_column_names: cols_list: %s" % cols_list)
 		return cols_list
 
-	def read(self,logfile_name,regexps,output_sep_char,input_read_mode):
+	def read(self,logfile_name,regexps,output_sep_char,input_read_mode,output_files_divide_col):
 
 		print("")
 		
@@ -206,7 +208,7 @@ class LogFile:
 							variables[var_name]=var_value
 							#print("%5d: Var name: %-20s value: %s" % (cnt,var_name,var_value))
 						
-						self.generate_new_line(variables,output_sep_char)
+						self.generate_new_line(variables,output_sep_char,output_files_divide_col)
 
 				# Muuten, arvot ovat valmiina csv-tyyppisell‰ rivill‰
 				else:
@@ -219,7 +221,7 @@ class LogFile:
 					vars_value_list_len = len(columns_value_list) 
 					if vars_value_list_len != vars_list_len:
 						 print("ERR: Number of columns: %s and %s are different in line: %s" % 
-						 	(vars_value_list_len,vars_list_len,line))
+						 	(vars_value_list_len,vars_list_len,line,output_files_divide_col))
 						 sys.exit()
 
 					line_sel_counter += 1
@@ -250,7 +252,7 @@ class LogFile:
 		
 		return self.columns_list + self.column_new_list
 	
-	def generate_new_line(self,variables,output_sep_char):
+	def generate_new_line(self,variables,output_sep_char,output_files_divide_col):
 
 		# Tehd‰‰n mahdolliset sarakkeiden konversiot
 		self.check_conversions()
@@ -265,8 +267,20 @@ class LogFile:
 			# Lis‰t‰‰n arvo tulostiedoston (csv) rivin loppuun
 			self.line_csv = self.line_csv + output_sep_char + col_val
 
-		# Laitetaan tulostiedoston rivi talteen
-		self.output_lines.append(self.line_csv)
+		if output_files_divide_col == None:
+			# Laitetaan tulostiedoston rivi talteen
+			self.output_lines.append(self.line_csv)
+		else:
+
+			col_value = variables[output_files_divide_col]
+
+			try:
+				divide_col_values[col_value] += 1
+			except:
+				divide_col_values[col_value] = 1
+
+			# Laitetaan annetun sarakkeen arvon mukaiseen tulostiedoston rivi talteen
+			self.output_col_lines[col_value].append(self.line_csv)
 
 
 #******************************************************************************
@@ -291,7 +305,12 @@ def make_dir_if_no_exist(file_path_name):
 #	FUNCTION:	write_output_file
 #
 #******************************************************************************	
-def write_output_file(logfile_new_name,output_lines,column_name_prefix,output_sep_char):
+#def write_output_file(logfile_new_name,output_lines,column_name_prefix,output_sep_char,output_files_divide_col):
+def write_output_file(logfile_new_name,column_name_prefix,output_sep_char,output_files_divide_col):
+
+	global output_lines
+	global output_col_lines
+	global divide_col_values
 
 	line_cnt = 0
 	make_dir_if_no_exist(logfile_new_name)
@@ -309,14 +328,53 @@ def write_output_file(logfile_new_name,output_lines,column_name_prefix,output_se
 		
 	f.writelines("\n")
 	
-	# Rivit
-	for output_line in output_lines:
-		line_cnt += 1
-		str = "%d %s\n" % (line_cnt,output_line)
-		#print("%s" % str)
-		f.writelines(str)
+	if output_files_divide_col == None:
+
+		# Rivit
+		for output_line in output_lines:
+			line_cnt += 1
+			str = "%d %s\n" % (line_cnt,output_line)
+			#print("%s" % str)
+			f.writelines(str)
+	else:
 		
+		# KESKEN !!
+		
+		col_value_list = divide_col_values.keys()
+		for col_value in col_value_list:
+			line_cnt = 0
+			# Rivit
+			for output_line in self.output_col_lines[col_value]:
+				line_cnt += 1
+				str = "%d %s\n" % (line_cnt,output_line)
+				#print("%s" % str)
+				f.writelines(str)
+
 	f.close()
+
+#******************************************************************************
+#       
+#	FUNCTION:	format_output_filename
+#
+#******************************************************************************	
+def format_output_filename(input_read_mode,output_files_divide_col,output_path,file_name,combined_file_name,msg_type):
+
+	# KESKEN !!
+
+	logfile_new_name = ""
+	col_name = ""
+	if output_files_divide_col != None:
+		col_name = "_" + output_files_divide_col + "_"
+
+	if input_read_mode == None:
+		logfile_new_name = output_path + file_name + "_" + col_name + msg_type + ".csv"
+	elif input_read_mode == "COMBINE":
+		logfile_new_name = output_path + combined_file_name + "_" + col_name + msg_type + ".csv"
+	else:
+		print("ERR: format_output_filename: Unknown read mode: %s" % input_read_mode)
+
+	return logfile_new_name
+
 
 #******************************************************************************
 #       
@@ -391,6 +449,10 @@ for logfile_name in logfile_name_list:
 	
 	logfile_new_name = args.output_path + file_name + "_" + msg_type + ".csv"
 	
+	#logfile_new_name = format_output_filename(args.input_read_mode,
+	#		args.output_files_divide_col,args.output_path,file_name,
+	#		args.combined_file_name,msg_type)
+
 	print("logfile_new_name = \"%s\"" % logfile_new_name)
 	
 	#state_search_string = state_search_strings[msg_type]
@@ -419,7 +481,7 @@ for logfile_name in logfile_name_list:
 	log_file.set_columns_conversions(columns_list,args.column_oper)
 
 	#log_file.read(logfile_name,regexps,columns_list)
-	log_file.read(logfile_name,regexps,args.output_sep_char,args.input_read_mode)
+	log_file.read(logfile_name,regexps,args.output_sep_char,args.input_read_mode,args.output_files_divide_col)
 	
 	# Haetaan uusi sarakelista (jos tullut uusia tai jotain poistettu)
 	columns_new_list = log_file.get_columns()
@@ -430,7 +492,8 @@ for logfile_name in logfile_name_list:
 
 		# Kirjoitetaan tiedostoon
 		output_lines = log_file.get()
-		write_output_file(logfile_new_name,output_lines,args.column_name_prefix,args.output_sep_char)
+		#write_output_file(logfile_new_name,output_lines,args.column_name_prefix,args.output_sep_char,args.output_files_divide_col)
+		write_output_file(logfile_new_name,args.column_name_prefix,args.output_sep_char,args.output_files_divide_col)
 
 	elif args.input_read_mode == "COMBINE":
 		print("COMBINE")
@@ -443,8 +506,14 @@ for logfile_name in logfile_name_list:
 if args.input_read_mode == "COMBINE":
 
 	logfile_new_name = args.output_path + args.combined_file_name + "_" + args.msg_type + ".csv"
+
+	#logfile_new_name = format_output_filename(args.input_read_mode,
+	#		args.output_files_divide_col,args.output_path,file_name,
+	#		args.combined_file_name,msg_type)
+
 	# Kirjoitetaan tiedostoon
-	write_output_file(logfile_new_name,output_lines,args.column_name_prefix,args.output_sep_char)
+	#write_output_file(logfile_new_name,output_lines,args.column_name_prefix,args.output_sep_char,args.output_files_divide_col)
+	write_output_file(logfile_new_name,args.column_name_prefix,args.output_sep_char,args.output_files_divide_col)
 
 
 print(" Total execution time: %.3f seconds\n" % (time.time() - start_time))
