@@ -310,30 +310,30 @@ def make_dir_if_no_exist(file_path_name):
 #
 #******************************************************************************	
 #def write_output_file(logfile_new_name,output_lines,column_name_prefix,output_sep_char,output_files_divide_col):
-def write_output_file(logfile_new_name,column_name_prefix,output_sep_char,output_files_divide_col):
+def write_output_file(output_path,logfile_new_name,column_name_prefix,output_sep_char,output_files_divide_col,combined_file_name,msg_type):
 
 	global output_lines
 	global output_col_lines
 	global divide_col_values
 
-	line_cnt = 0
-	make_dir_if_no_exist(logfile_new_name)
-	f = open(logfile_new_name, 'w')
-
-	# Otsikko
-	f.writelines("%sCounter" % column_name_prefix)
-	for col_name in columns_new_list:
-	
-		# Lis‰t‰‰n prefix sarakkeiden nimien alkuun
-		column_name_with_prefix = column_name_prefix + col_name 
-	
-		#f.writelines("\t" + col_name)
-		f.writelines(output_sep_char + column_name_with_prefix)
-		
-	f.writelines("\n")
-	
 	if output_files_divide_col == None:
 
+		line_cnt = 0
+		make_dir_if_no_exist(logfile_new_name)
+		f = open(logfile_new_name, 'w')
+
+		# Otsikko
+		f.writelines("%sCounter" % column_name_prefix)
+		for col_name in columns_new_list:
+		
+			# Lis‰t‰‰n prefix sarakkeiden nimien alkuun
+			column_name_with_prefix = column_name_prefix + col_name 
+		
+			#f.writelines("\t" + col_name)
+			f.writelines(output_sep_char + column_name_with_prefix)
+			
+		f.writelines("\n")
+	
 		# Rivit
 		for output_line in output_lines:
 			line_cnt += 1
@@ -342,11 +342,29 @@ def write_output_file(logfile_new_name,column_name_prefix,output_sep_char,output
 			f.writelines(str)
 	else:
 		
-		# KESKEN !!
-		
+		file_cnt = 0
 		col_value_list = divide_col_values.keys()
 		for col_value in col_value_list:
 			line_cnt = 0
+			file_cnt += 1
+			logfile_new_name = output_path + combined_file_name + "_" + col_value + "_" + msg_type + ".csv"
+			print("writes: %5d: logfile_new_name = %s" % (file_cnt,logfile_new_name))
+
+			make_dir_if_no_exist(logfile_new_name)
+			f = open(logfile_new_name, 'w')
+
+			# Otsikko
+			f.writelines("%sCounter" % column_name_prefix)
+			for col_name in columns_new_list:
+			
+				# Lis‰t‰‰n prefix sarakkeiden nimien alkuun
+				column_name_with_prefix = column_name_prefix + col_name 
+			
+				#f.writelines("\t" + col_name)
+				f.writelines(output_sep_char + column_name_with_prefix)
+				
+			f.writelines("\n")
+
 			# Rivit
 			for output_line in output_col_lines[col_value]:
 				line_cnt += 1
@@ -505,7 +523,7 @@ for logfile_name in logfile_name_list:
 
 		# Kirjoitetaan tiedostoon		
 		#write_output_file(logfile_new_name,output_lines,args.column_name_prefix,args.output_sep_char,args.output_files_divide_col)
-		write_output_file(logfile_new_name,args.column_name_prefix,args.output_sep_char,args.output_files_divide_col)
+		write_output_file(args.output_path,logfile_new_name,args.column_name_prefix,args.output_sep_char,args.output_files_divide_col,args.combined_file_name,args.msg_type)
 
 	elif args.input_read_mode == "COMBINE":
 		print("COMBINE")
@@ -525,7 +543,7 @@ if args.input_read_mode == "COMBINE":
 
 	# Kirjoitetaan tiedostoon
 	#write_output_file(logfile_new_name,output_lines,args.column_name_prefix,args.output_sep_char,args.output_files_divide_col)
-	write_output_file(logfile_new_name,args.column_name_prefix,args.output_sep_char,args.output_files_divide_col)
+	write_output_file(args.output_path,logfile_new_name,args.column_name_prefix,args.output_sep_char,args.output_files_divide_col,args.combined_file_name,args.msg_type)
 
 
 print(" Total execution time: %.3f seconds\n" % (time.time() - start_time))
