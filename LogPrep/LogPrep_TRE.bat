@@ -28,5 +28,6 @@ python %SCRIPT_PATH%LogPrep.py ^
 					-msg_type "BUS" ^
 					-column_name_prefix "BUS_" ^
 					-columns "" ^
-					-regexps ""
+					-regexps "" ^
+					-column_oper "<time>=standard_time(<time>)"
 					

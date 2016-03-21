@@ -67,7 +67,7 @@ def bqd_bus_time(bqd_year,bqd_month,bqd_day,bqd_time):
 	
 def ccs_rtattime(ccs_rtat_time,date):
 
-	#print("ccs_rtattime: %s %s %s" % (ccs_rtat_time,date))
+	#print("ccs_rtattime: %s %s" % (ccs_rtat_time,date))
 	
 	timestamp_new_str = ccs_rtat_time
 	timestamp_str = str(date) + " " + ccs_rtat_time
@@ -76,6 +76,26 @@ def ccs_rtattime(ccs_rtat_time,date):
 		timestamp_new_str = timestamp.strftime("%Y-%m-%d %H:%M:%S")
 	except ValueError:
 		print("ERR: ccs_rtattime: Can not convert time: %s" % timestamp_str)
+	
+	return timestamp_new_str
+
+def standard_time(std_time):
+
+	#print("standard_time: %s" % (time))
+	
+	# Esim: 2015-12-31T07:01:35.059+02:00
+
+	date_str,time_str = std_time.split("T")
+	time_str2,time_str3 = time_str.split(".")
+
+	timestamp_new_str = std_time
+	timestamp_str = str(date_str) + " " + time_str2
+	try:
+		#timestamp = datetime.strptime(timestamp_str,"%Y-%m-%d %H:%M:%S")
+		timestamp = datetime.strptime(timestamp_str,"%Y-%m-%d %H:%M:%S")
+		timestamp_new_str = timestamp.strftime("%Y-%m-%d %H:%M:%S")
+	except ValueError:
+		print("ERR: standard_time: Can not convert time: %s" % timestamp_str)
 	
 	return timestamp_new_str
 	
