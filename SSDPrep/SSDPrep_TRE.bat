@@ -16,4 +16,4 @@ python %SCRIPT_PATH%SSDPrep.py ^
 						-datafile_type %SSD_TYPE% ^
 						-ssdfile_path %SSD_PATH% ^
 						-ssdfile_name %SSD_TYPE% ^
-						-stop_area_size 100
+						-stop_area_size 50

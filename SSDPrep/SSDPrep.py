@@ -21,6 +21,10 @@ import re
 from datetime import datetime
 import configparser
 
+lib_path = os.path.abspath(os.path.join('..', 'LogCom'))
+sys.path.append(lib_path)
+from MapGEkml import *
+
 g_version = "$Id$"
 
 
@@ -29,7 +33,7 @@ g_version = "$Id$"
 #	FUNCTION:	write_ssd_datafile
 #
 #******************************************************************************
-def write_ssd_datafile(ssd_file_path,ssdfile_name,stop_id,stop_lat,stop_lon,stop_area_size):
+def write_ssd_datafile(ssd_file_path,ssdfile_name,stop_id,stop_lat,stop_lon,stop_area_size,klm_file_path_name):
 
 	#print("write_ssd_datafile: stop_id=%s, stop_lat=%s, stop_lon=%s, stop_area_size=%s m" % (stop_id,stop_lat,stop_lon,stop_area_size))
 
@@ -39,8 +43,8 @@ def write_ssd_datafile(ssd_file_path,ssdfile_name,stop_id,stop_lat,stop_lon,stop
 	make_dir_if_no_exist(ssd_path_file_name)
 
 	# Muutetaan laatikoon metri-arvot koordinaattirajoiksi
-	lon_diff = int(stop_area_size) / 0.03 / 3600000.0
-	lat_diff = int(stop_area_size) / 0.015 / 3600000.0
+	lon_diff = int(stop_area_size) / 0.015 / 3600000.0
+	lat_diff = int(stop_area_size) / 0.03 / 3600000.0
 	area_left_down_lon = float(stop_lon) - lon_diff
 	area_left_down_lat = float(stop_lat) - lat_diff
 	area_right_up_lon = float(stop_lon) + lon_diff
@@ -67,6 +71,19 @@ def write_ssd_datafile(ssd_file_path,ssdfile_name,stop_id,stop_lat,stop_lon,stop
 	ssd_str = "4,%s,%s\n" % (area_right_up_lon,area_left_down_lat)
 	f.writelines(ssd_str)	
 
+	# Kirjoitetaan alue Google Earthin kml-tiedostoon
+	coord_list = []
+	coord_list.append([area_left_down_lon,area_left_down_lat])
+	coord_list.append([area_left_down_lon,area_right_up_lat])
+	coord_list.append([area_right_up_lon,area_right_up_lat])
+	coord_list.append([area_right_up_lon,area_left_down_lat])
+	coord_list.append([area_left_down_lon,area_left_down_lat])	
+	write_area_to_kml_file(klm_file_path_name,stop_id,coord_list,200)
+
+	# Kirjoitetaan piste Google Earthin kml-tiedostoon
+	coord_list = [[stop_lon,stop_lat]]
+	write_point_to_kml_file(klm_file_path_name,stop_id,coord_list,200)
+
 	f.close()
 
 #******************************************************************************
@@ -74,17 +91,21 @@ def write_ssd_datafile(ssd_file_path,ssdfile_name,stop_id,stop_lat,stop_lon,stop
 #	FUNCTION:	convert_TRE_BS_datafile_to_ssdfile
 #
 #******************************************************************************
-def convert_TRE_BS_datafile_to_ssdfile(datafile_path,datafile_name,ssdfile_path,ssdfile_name,stop_area_size):
+def convert_TRE_BS_datafile_to_ssdfile(datafile_type,datafile_path,datafile_name,ssdfile_path,ssdfile_name,stop_area_size):
 
 	
 	datafile_path_name = datafile_path + datafile_name
+	klm_file_path_name = ssdfile_path + datafile_type + ".kml"
 
 	if os.path.isfile(datafile_path_name):
 	
 		f = open(datafile_path_name, 'r', encoding='utf-8')
 		lines = f.readlines()
 		f.close()
-		
+
+		# Alustetaan Google Earthin klm-tiedosto
+		init_kml_file(klm_file_path_name,datafile_type,"")
+
 		line_counter = 0
 		sel_line_counter = 0					
 		# Kaydaan lapi loki-tiedoston rivit
@@ -114,9 +135,13 @@ def convert_TRE_BS_datafile_to_ssdfile(datafile_path,datafile_name,ssdfile_path,
 					stop_lon = line_list[4]
 					print("%5d: stop_id=%s: stop_lat=%s: stop_lon=%s" % (line_counter,stop_id,stop_lat,stop_lon))
 
-					write_ssd_datafile(ssdfile_path,ssdfile_name,stop_id,stop_lat,stop_lon,stop_area_size)
+					write_ssd_datafile(ssdfile_path,ssdfile_name,stop_id,stop_lat,stop_lon,stop_area_size,
+										klm_file_path_name)
 
 			#print("%5d: %s: %s" % (line_counter,line_type,line_list))
+
+		# Lopputekstit klm-tiedostoon
+		finalize_kml_file(klm_file_path_name)
 
 		print("\n -- Wrote %s ssd-files to: %s \n" % (sel_line_counter,ssdfile_path))
 
@@ -169,8 +194,8 @@ def main():
 	start_time = time.time()
 
 	if args.datafile_type == "SSD_TRE_BS":
-		convert_TRE_BS_datafile_to_ssdfile(args.datafile_path,args.datafile_name,args.ssdfile_path,
-			args.ssdfile_name,args.stop_area_size)
+		convert_TRE_BS_datafile_to_ssdfile(args.datafile_type,args.datafile_path,args.datafile_name,
+			args.ssdfile_path,args.ssdfile_name,args.stop_area_size)
 	else:
 		print("ERR: Unknown datafile_type: %s" % args.datafile_type)
 
