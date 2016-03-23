@@ -124,7 +124,7 @@ class ESU:
 	
 		# Haetaan muuttujista merkkijonossa käytetyä muuttujaa
 		#for var_name in self.state_log_variables_list:
-		print("get_variable_value: var_list = %s" % var_list)
+		#print("get_variable_value: var_list = %s" % var_list)
 		for var_name in var_list:
 			var_name_ext = "<" + var_name + ">"
 			
@@ -169,23 +169,25 @@ class ESU:
 
 			for column_name in self.log_column_names_list:
 				self.last_found_new_variables[column_name] = self.last_found_variables[column_name]
+
+			try:
+				ana.variables["INT-LATITUDE-OLD"] = self.last_found_old_variables[self.position_lat_variable_name]
+				ana.variables["INT-LONGITUDE-OLD"] = self.last_found_old_variables[self.position_lon_variable_name]
+			except:
+				print("ESU: ERR: Not found longitude or latitude names from columns")
+				sys.exit()
 			
-			self.position_lon_variable_name
-			
-			ana.variables["INT-LATITUDE-OLD"] = self.last_found_old_variables[self.position_lat_variable_name]
-			ana.variables["INT-LONGITUDE-OLD"] = self.last_found_old_variables[self.position_lon_variable_name]
-			
-			ana.variables["INT-LOCAT-TIME-OLD"] = self.last_found_old_variables[self.state_log_time_column]
-			
-			#print("POS OLD: %s, %s, %s" % (ana.variables["BUS-LAT-OLD"],ana.variables["BUS-LON-OLD"],ana.variables["BUS-LOCAT-TIME-OLD"]))
+			try:
+				ana.variables["INT-LOCAT-TIME-OLD"] = self.last_found_old_variables[self.state_log_time_column]
+			except:
+				print("ESU: ERR: Not found time column")
+				sys.exit()
 			
 			ana.variables["INT-LATITUDE-NEW"] = self.last_found_new_variables[self.position_lat_variable_name]
 			ana.variables["INT-LONGITUDE-NEW"] = self.last_found_new_variables[self.position_lon_variable_name]
 			
 			ana.variables["INT-LOCAT-TIME-NEW"] = self.last_found_new_variables[self.state_log_time_column]
-			
-			#print("POS NEW: %s, %s, %s" % (ana.variables["BUS-LAT-NEW"],ana.variables["BUS-LON-NEW"],ana.variables["BUS-LOCAT-TIME-NEW"]))
-			
+						
 			pos_old_in_area = self.check_position_in_area(ana.variables["INT-LONGITUDE-OLD"],ana.variables["INT-LATITUDE-OLD"])
 			pos_new_in_area = self.check_position_in_area(ana.variables["INT-LONGITUDE-NEW"],ana.variables["INT-LATITUDE-NEW"])
 				
@@ -229,9 +231,9 @@ class ESU:
 		# Nykyiset globaalien loki-muuttujien arvot talteen
 		# Vai pitäisikö arvokin tulla suoraan funktioparametrilla (vanha ?)
 
-		print("ESU: log variables:")
 		var_oper_list = state_log_variables.split(",")
 		self.state_log_variables_list = []
+		print("ESU: log variables: %s" % var_oper_list)
 		cnt = 0
 		for var_oper in var_oper_list:
 			cnt += 1
@@ -261,7 +263,7 @@ class ESU:
 		# Nykyiset globaalien data-muuttujien arvot talteen
 		var_oper_list = state_data_variables.split(",")
 		self.state_data_variables_list = []
-		print("ESU: data variables:")
+		print("ESU: data variables: %s"  % var_oper_list)
 		cnt = 0
 		for var_oper in var_oper_list:
 
@@ -306,10 +308,10 @@ class ESU:
 					self.position_variables[var_name] = ""
 					print(" %5d: %s" % (cnt,var_name))
 					
-					if "LONGITUDE" in var_name or "X" in var_name:
+					if "LONGITUDE" in var_name or "ongitude" in var_name or "X" in var_name:
 						self.position_lon_variable_name = var_name
 						print("ESU: Found position LONGITUDE-name: %s" % (var_name))
-					elif "LATITUDE" in var_name or "Y" in var_name:
+					elif "LATITUDE" in var_name or "atitude" in var_name or "Y" in var_name:
 						self.position_lat_variable_name = var_name
 						print("ESU: Found position LATITUDE-name : %s" % (var_name))
 			
@@ -405,7 +407,7 @@ class ESU:
 				#line_list = line.split("\t")
 				line_list = line.split(",")
 				line_list_len = len(line_list)
-				print("ESU: line_list: %5d: %s" % (line_counter,line_list))
+				#print("ESU: line_list: %5d: %s" % (line_counter,line_list))
 				if line_list_len > 2:
 					
 					counter = line_list[0]
@@ -423,10 +425,10 @@ class ESU:
 					print("ESU: ERR: Incorrect position data: %s" % (line))
 					return False
 					
-			print("position_area_left_down_lon = %s" % self.position_area_left_down_lon)
-			print("position_area_left_down_lat = %s" % self.position_area_left_down_lat)
-			print("position_area_right_up_lon  = %s" % self.position_area_right_up_lon)
-			print("position_area_right_up_lat  = %s" % self.position_area_right_up_lat)
+			#print("position_area_left_down_lon = %s" % self.position_area_left_down_lon)
+			#print("position_area_left_down_lat = %s" % self.position_area_left_down_lat)
+			#print("position_area_right_up_lon  = %s" % self.position_area_right_up_lon)
+			#print("position_area_right_up_lat  = %s" % self.position_area_right_up_lat)
 
 		else:
 			return False
@@ -589,7 +591,7 @@ class ESU:
 								ret = self.check_position_event(state_type_param)
 								if ret == True:
 									return self.onexit(1)
-									
+
 						# Pitää myös "poistaa" käytetty viesti, että sitä ei oteta uudestaan !!??
 			
 			print("ESU: line_counter       = %d" % line_counter)
@@ -630,7 +632,7 @@ class ESU:
 		
 		state_type_list = state_type.split(":")
 		state_type_list_len = len(state_type_list)
-		if state_type_list_len != 2:
+		if state_type_list_len < 2:
 			print("ESU: ERR: Length %s is incorrect in type: %s" % (state_type_list_len,state_type))
 			self.onexit(-1)
 		
@@ -645,8 +647,49 @@ class ESU:
 		
 		state_type_name 	= state_type_list[0]
 		state_type_param	= state_type_list[1]
-		print("ESU: state_type_name: %s : state_type_param : %s" % (state_type_name,state_type_param))
+		state_type_param2 = ""
+		if state_type_list_len > 2:
+			state_type_param2	= state_type_list[2]
+
+		#print("ESU: state_type_name: %s : state_type_param : %s" % (state_type_name,state_type_param))
 		
+		# Jos haetaan monta samanlaista tapahtumaa peräkkäin
+		if state_type_param2 == "Serial":
+
+			try:
+				serial_values = ana.variables[state_data_variables]
+				#print("serial_values = %s" % serial_values)
+			except KeyError:
+				print("ESU: ERR: Not found data variable in state: %s" % (self.name))
+				return (False)
+
+			serial_vars_list = serial_values.split(",")
+
+			print("ESU: names of serial areas: %s" % serial_vars_list)
+			for serial_var in serial_vars_list:
+
+				print("\nESU: Start to serial search for area:  %s ------------------ " % serial_var)
+
+				state_data_variables = "SERIAL-ID"
+				ana.variables["SERIAL-ID"] = serial_var
+				ret = self.run_esu_state(state_log_variables,state_data_variables,state_position_variables,
+							logfile_name,datafile_name,start_time,stop_time,state_type_param)
+
+				if ret == "Found":
+					start_time = ana.variables["INT-FOUND-TIMESTAMP"]
+				else:
+					return ret
+
+			return ret
+
+		# Muuten haetaan vain yksi tapahtuma
+		else:
+			return self.run_esu_state(state_log_variables,state_data_variables,state_position_variables,
+							logfile_name,datafile_name,start_time,stop_time,state_type_param)
+		
+	def run_esu_state(self,state_log_variables,state_data_variables,state_position_variables,
+					logfile_name,datafile_name,start_time,stop_time,state_type_param):
+
 		# Luetaan inputtina saadut loki-, data- ja paikkatieto-muuttujat
 		ret = self.read_input_variables(state_log_variables,state_data_variables,state_position_variables)
 		if ret == False:
@@ -655,29 +698,32 @@ class ESU:
 		
 		# Jos lokitiedoston nimessä on muuttuja, pitää sen arvo "purkaa" nimeen
 		# Näin on esim. bussilokiessa, jossa tiedoston nimessä on bussinumero. Esim. APO_304_LOCAT.csv)
-		
-		ret, logfile_name = self.get_variable_value(logfile_name,self.state_log_variables_list)
+
+		all_variables_list = ana.variables.keys()
+		#ret, logfile_name = self.get_variable_value(logfile_name,self.state_log_variables_list)		
+		ret, logfile_name = self.get_variable_value(logfile_name,all_variables_list)
 		if ret == False:
 			print("ESU: ERR: Getting log-variables")
 			self.onexit(-1)
-			
-		ret, datafile_name = self.get_variable_value(datafile_name,self.state_data_variables_list)
+
+		#ret, datafile_name = self.get_variable_value(datafile_name,self.state_data_variables_list)			
+		ret, datafile_name = self.get_variable_value(datafile_name,all_variables_list)
 		if ret == False:
 			print("ESU: ERR: Getting data-variables")
 			self.onexit(-1)
 			
 		print("ESU: read logfile_name  : %s" % logfile_name)
 		print("ESU: read datafile_name : %s" % datafile_name)
-		
+	
 		# Luetaan datatiedosto (jos käytössä) ja haetaan sieltä tiedot data-muuttujilla
 		ret = self.read_datafile(datafile_name)
 		if ret == False:
 			print("ESU: WARN: Reading datafile (or it is not exist)")
 			self.onexit(-1)
-			
+		
 		# Luetaan lokitiedosto ja haetaan sieltä tiedot log-muuttujilla halutulla aikavälillä
 		return self.read_logfile(logfile_name,start_time,stop_time,state_type_param)
-		
+
 #******************************************************************************
 #       
 #	CLASS:	BMU
@@ -1153,8 +1199,6 @@ class BMU:
 				if ret == "Found":
 
 					self.state_found_counter += 1
-					#self.state_found_list.append(self.current_state_name)
-					#self.state_found_time[self.current_state_name] = ana.variables["INT-FOUND-TIMESTAMP"]
 					self.state_found_metadata[self.current_state_name] = ana.variables["INT-FOUND-TIMESTAMP"],self.state_found_counter
 
 
@@ -1225,8 +1269,6 @@ def import_analyze_file(pathname,filename,mode):
 			ana.transition_function[var_key] = ["","",""] 
 
 			# Alustetaan optionaaliset arvot
-			#ana.state_position_variables[var_key][1] = ""
-			#ana.state_position_variables[var_key][0] = ""
 			state_position_lon_variable = ""
 			state_position_lat_variable = ""			
 			ana.state_datafiles[var_key] = ""
@@ -1250,10 +1292,8 @@ def import_analyze_file(pathname,filename,mode):
 					ana.state_stop_time_limit[var_key] = var_value2
 
 				elif var_key2 == "ssd_lat_col_name":
-					#ana.state_position_variables[var_key][1] = var_value2
 					state_position_lat_variable = var_value2
 				elif var_key2 == "ssd_lon_col_name":
-					#ana.state_position_variables[var_key][0] = var_value2
 					state_position_lon_variable = var_value2
 				elif var_key2 == "ssd_filename_expr":
 					ana.state_datafiles[var_key] = var_value2
@@ -1368,7 +1408,8 @@ def init_analyzing(args):
 
 	# Lailliset tilan tyypit ja parametrit
 	legal_state_types = ["SEARCH_EVENT:First","SEARCH_EVENT:Last",
-						 "SEARCH_POSITION:Leaving","SEARCH_POSITION:Entering"]
+						 "SEARCH_POSITION:Leaving","SEARCH_POSITION:Entering",
+						 "SEARCH_POSITION:Leaving:Serial","SEARCH_POSITION:Entering:Serial"]
 
 	# Lisätään lokitiedostoihin polku
 	for state_logfile_name in ana.state_logfiles.keys():
@@ -1377,7 +1418,7 @@ def init_analyzing(args):
 		
 	# Lisätään datatiedostoihin polku
 	for state_datafile_name in ana.state_datafiles.keys():
-		ana.state_datafiles[state_datafile_name]		= args.input_logs_path + ana.state_datafiles[state_datafile_name]
+		ana.state_datafiles[state_datafile_name]		= args.input_ssd_path + ana.state_datafiles[state_datafile_name]
 		print("ESU: %-15s Datafile: %s" % (state_datafile_name, ana.state_datafiles[state_datafile_name]))
 
 
@@ -1399,6 +1440,7 @@ def main():
 	parser.add_argument('-start_time','--start_time', dest='start_time', help='start_time')
 	parser.add_argument('-stop_time','--stop_time', dest='stop_time', help='stop_time')
 	parser.add_argument('-input_logs_path','--input_logs_path', dest='input_logs_path', help='input_logs_path')
+	parser.add_argument('-input_ssd_path','--input_ssd_path', dest='input_ssd_path', help='input_ssd_path')
 	parser.add_argument('-output_files_path','--output_files_path', dest='output_files_path', help='output_files_path')
 	parser.add_argument('-analyze_file_path','--analyze_file_path', dest='analyze_file_path', help='analyze_file_path')
 	parser.add_argument('-analyze_file','--analyze_file', dest='analyze_file', help='analyze_file')
@@ -1413,6 +1455,7 @@ def main():
 	print("start_time        : %s" % args.start_time)
 	print("stop_time         : %s" % args.stop_time)
 	print("input_logs_path   : %s" % args.input_logs_path)
+	print("input_ssd_path    : %s" % args.input_ssd_path)
 	print("output_files_path : %s" % args.output_files_path)
 	print("analyze_file_path : %s" % args.analyze_file_path)
 	print("analyze_file      : %s" % args.analyze_file)

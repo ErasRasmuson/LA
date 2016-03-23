@@ -4,17 +4,18 @@ ECHO OFF
 SET MY_PATH=D:\MyProjects\LA
 
 SET SCRIPT_PATH=%MY_PATH%\LogDig\
-SET LOGS_PATH=%MY_PATH%\LogFile\PreProsessed\TLG_1\
-SET RESULT_PATH=%MY_PATH%\LogRes\TLG_1\
+SET LOGS_PATH=%MY_PATH%\LogFile\PreProsessed\TRE\
+SET SSD_PATH=%MY_PATH%\SSDFile\SSD_TRE_BS\
+SET RESULT_PATH=%MY_PATH%\LogRes\TRE\
 SET ANALYZE_PATH=%MY_PATH%\LogAna\
-SET ANALYZE_FILE=logdig_TLG_1_new4
+SET ANALYZE_FILE=logdig_TRE
 
 python %SCRIPT_PATH%LogDig.py ^
-						-date 24.02.2016 ^
-						-start_time 08:00:00 ^
+						-date 31.12.2015 ^
+						-start_time 07:00:00 ^
 						-stop_time 09:00:00 ^
 						-input_logs_path %LOGS_PATH% ^
-						-input_ssd_path %LOGS_PATH% ^
+						-input_ssd_path %SSD_PATH% ^
 						-output_files_path %RESULT_PATH% ^
 						-analyze_file_path %ANALYZE_PATH% ^
 						-analyze_file %ANALYZE_FILE% ^
