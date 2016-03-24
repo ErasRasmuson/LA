@@ -517,7 +517,7 @@ class GUI_AnalyzeArea(GUI,QWidget):
 
 		# Sovitetaan ikkunan leveys sopivaksi
 		#win_width = len(self.state_GUI_line_num.keys()) * line_gap + start_x
-		win_width = len(event_topics.keys()) * line_gap + start_x
+		win_width = len(event_topics.keys()) * line_gap + start_x + 100
 		self.resize(win_width,self.height())
 		#print(" x=%s, y=%s, w=%s, h=%s, win_width=%s" % (self.x(),self.y(),self.width(),self.height(),win_width))
 
@@ -530,14 +530,14 @@ class GUI_AnalyzeArea(GUI,QWidget):
 		print("Analyze area: width: %s, height: %s, x: %s, y: %s" % (self.width(),self.height(),self.x(),self.y()))
 
 
-	def drawEvent(self,qp,event_pos,timestamp,text,symbol):
+	def drawEvent(self,qp,event_pos,event_offset,timestamp,text,symbol):
 
 		if self.analyzing_mode == "COMPARE":
 			return
 
 		width = 6
 		width_half = int(width / 2.0)
-		x_pos = self.event_line_x1[int(event_pos)] - width_half
+		x_pos = self.event_line_x1[int(event_pos)] - width_half + event_offset 
 		y_pos = self.line_y1 - width_half + self.calcEventPos(timestamp) * self.line_zoom
 
 		if symbol == "circle":
@@ -587,7 +587,7 @@ class GUI_AnalyzeArea(GUI,QWidget):
 		#qp.drawText( x_pos,y_pos - 10,str(timestamp1))
 		#qp.drawText( x_pos,y_pos2 - 10,str(timestamp2))
 
-	def drawTraceLine(self,qp,event_pos1,timestamp1,event_pos2,timestamp2,color):
+	def drawTraceLine(self,qp,event_pos1,event_offset_1,timestamp1,event_pos2,event_offset_2,timestamp2,color):
 
 		if self.analyzing_mode == "COMPARE":
 			ts1 = timestamp1 - self.reference_diff_time
@@ -605,10 +605,10 @@ class GUI_AnalyzeArea(GUI,QWidget):
 		#print("y_pos=%s, y_pos2=%s" % (y_pos,y_pos2))
 		#print("event_pos1=%s, event_pos2=%s" % (event_pos1,event_pos2))
 
-		x_pos = self.event_line_x1[int(event_pos1)]
+		x_pos = self.event_line_x1[int(event_pos1)] + event_offset_1
 		#print("x_pos=%s" % (x_pos))
 
-		x_pos2 = self.event_line_x1[int(event_pos2)]
+		x_pos2 = self.event_line_x1[int(event_pos2)] + event_offset_2
 		#print("x_pos2=%s" % (x_pos2))
 
 		self.draw_line(qp,x_pos,y_pos,x_pos2,y_pos2,"",color)

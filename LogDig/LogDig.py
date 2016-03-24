@@ -102,8 +102,8 @@ class ESU:
 			ana.variables["INT-FOUND-TIMESTAMP"] = self.line_found_timestamp
 
 			# Piirretään löydetty tapahtuma GUI:hin
-			if self.gui_enable == 1:
-				self.draw_event(self.name,self.line_found_timestamp,str(self.line_found_timestamp))
+			#if self.gui_enable == 1:
+			#	self.draw_event(self.name,self.line_found_timestamp,str(self.line_found_timestamp))
 
 			# Kopioidaan löydetyn rivin muuttujat globaaleihin muuttujiin
 			cnt = 0
@@ -544,8 +544,8 @@ class ESU:
 						#print("ESU: Line %s in time-gap: %s -- %s" % (line,start_time,stop_time))
 						
 						# Piirretään löydetty tapahtuma GUI:hin
-						if self.gui_enable == 1:
-							self.draw_event(self.name,line_timestamp,"")
+						#if self.gui_enable == 1:
+						#	self.draw_event(self.name,line_timestamp,"")
 
 						# Onko rivin muuttujien arvot samat kuin input-muuttujien arvot
 						ok_count = 0
@@ -654,6 +654,7 @@ class ESU:
 		#print("ESU: state_type_name: %s : state_type_param : %s" % (state_type_name,state_type_param))
 		
 		# Jos haetaan monta samanlaista tapahtumaa peräkkäin
+		ana.variables["INT-SERIAL-FOUND-COUNTER"] = 0
 		if state_type_param2 == "Serial":
 
 			try:
@@ -664,6 +665,8 @@ class ESU:
 				return (False)
 
 			serial_vars_list = serial_values.split(",")
+
+			serial_found_cnt = 0
 
 			print("ESU: names of serial areas: %s" % serial_vars_list)
 			for serial_var in serial_vars_list:
@@ -677,9 +680,16 @@ class ESU:
 
 				if ret == "Found":
 					start_time = ana.variables["INT-FOUND-TIMESTAMP"]
+
+					# Kaikki löydetyt talteen
+					ser_var_name = "INT-SERIAL-FOUND-TIMESTAMP-%s" % (serial_found_cnt)
+					ana.variables[ser_var_name] = start_time
+					serial_found_cnt += 1
+
 				else:
 					return ret
 
+			ana.variables["INT-SERIAL-FOUND-COUNTER"] = serial_found_cnt
 			return ret
 
 		# Muuten haetaan vain yksi tapahtuma
@@ -761,6 +771,8 @@ class BMU:
 	start_state_counter = 0
 	#state_found_time = {}
 	state_found_metadata = {}
+	state_found_serial_metadata = {}
+	state_found_serial_metadata_counter = {}
 	state_found_counter = 0
 	#state_found_list = []
 	state_event_num = {}
@@ -844,9 +856,17 @@ class BMU:
 
 		print("")
 		
+	def draw_event(self,state_name,offset,timestamp,text):
+		try:
+			new_event_num = self.state_GUI_line_num[state_name]
+			#print("      ESU: GUI-line number: %s" % new_event_num)
+			self.gui.drawEvent(self.gui.qp,new_event_num,offset,timestamp,text,"circle")
+		except:
+			print("BMU: ERR: Not found state: \"%s\" for GUI-line" % (state_name))
+
 	def drawEventSequence(self):
 
-		#print(" ******* drawEventSequence")
+		print(" ******* drawEventSequence")
 
 		state_cnt = 0
 
@@ -908,7 +928,41 @@ class BMU:
 				except:
 					print("BMU: ERR: Not found color for cnt: %s" % self.color_list_counter)
 
-				self.gui.drawTraceLine(self.gui.qp,old_event_num,old_time,new_event_num,new_time,color)
+				# Jos tilassa sarjahaun tuloksia, piirretään niiden linkit tähän väliin
+				state_ser_counter = self.state_found_serial_metadata_counter[state_name]
+
+				if state_ser_counter > 0:
+					print("drawEventSequence: state: %s ser_counter: %s" % (state_name,state_ser_counter))
+					old_ser_time = old_time
+					old_ser_offset = 0
+					old_ser_event_num = old_event_num 
+					new_ser_event_num = new_event_num 
+					for i in range(state_ser_counter-1):
+
+						new_ser_time,ind = self.state_found_serial_metadata[state_name,i]
+						new_ser_offset = i * 20
+						#print("drawEventSequence: ser_time_found: %s, ind: %s" % (new_ser_time,ind))
+						
+						self.draw_event(state_name,new_ser_offset,new_ser_time,str(new_ser_time))
+
+						self.gui.drawTraceLine(self.gui.qp,old_ser_event_num,old_ser_offset,old_ser_time,
+												new_ser_event_num,new_ser_offset,new_ser_time,color)
+
+						old_ser_time = new_ser_time
+						old_ser_offset = new_ser_offset
+						old_ser_event_num = new_ser_event_num 
+
+					self.gui.drawTraceLine(self.gui.qp,old_ser_event_num,old_ser_offset,old_ser_time,
+										new_event_num,0,new_time,color)
+					self.draw_event(state_name,0,new_time,str(new_time))
+
+				# Muuten piirretään vain yksi linkki
+				else:					
+					self.gui.drawTraceLine(self.gui.qp,old_event_num,0,old_time,
+										new_event_num,0,new_time,color)
+
+			else:
+				self.draw_event(state_name,0,new_time,str(new_time))
 
 			old_time = new_time
 			old_event_num = new_event_num
@@ -1114,6 +1168,8 @@ class BMU:
 						self.drawEventSequence()
 						self.state_found_counter = 0
 						self.state_found_metadata = {}
+						self.state_found_serial_metadata = {}
+						self.state_found_serial_metadata_counter = {}
 
 					return 1
 
@@ -1127,6 +1183,8 @@ class BMU:
 						self.drawEventSequence()
 						self.state_found_counter = 0
 						self.state_found_metadata = {}
+						self.state_found_serial_metadata = {}
+						self.state_found_serial_metadata_counter = {}
 
 					# Seuraava piirtoväri listalta
 					self.color_list_counter += 1
@@ -1136,8 +1194,8 @@ class BMU:
 					print("  color_list_counter = %s" % self.color_list_counter)
 
 				# Tilan olio
-				new_state = self.state_array[self.current_state_name]
-		
+				new_esu_state = self.state_array[self.current_state_name]
+
 				# Tiedostojen nimet
 				logfile_name = self.state_logfiles[self.current_state_name]
 
@@ -1170,8 +1228,8 @@ class BMU:
 				if self.gui_enable == 1:
 					self.draw_timelimits(self.current_state_name,self.start_time,self.stop_time)
 
-				# Käynnistetään tila
-				ret = new_state.run(self.state_counter,
+				# Käynnistetään ESU-tila
+				ret = new_esu_state.run(self.state_counter,
 									self.start_time,
 									self.stop_time,
 									logfile_name,
@@ -1199,8 +1257,21 @@ class BMU:
 				if ret == "Found":
 
 					self.state_found_counter += 1
-					self.state_found_metadata[self.current_state_name] = ana.variables["INT-FOUND-TIMESTAMP"],self.state_found_counter
+					time_found = ana.variables["INT-FOUND-TIMESTAMP"]
+					self.state_found_serial_metadata_counter[self.current_state_name] = 0
 
+					# Jos käytetty sarjahakua ja myös löydetty tapahtumia
+					serial_found_cnt = int(ana.variables["INT-SERIAL-FOUND-COUNTER"])
+					if serial_found_cnt > 0:
+
+						for i in range(serial_found_cnt):
+							ser_var_name = "INT-SERIAL-FOUND-TIMESTAMP-%s" % (i)
+							ser_time_found = ana.variables[ser_var_name]
+							self.state_found_serial_metadata[self.current_state_name,i] = ser_time_found,i
+							self.state_found_serial_metadata_counter[self.current_state_name] = serial_found_cnt
+							time_found = ser_time_found
+
+					self.state_found_metadata[self.current_state_name] = time_found,self.state_found_counter
 
 			except KeyError:
 				print("BMU: ERR: Not found transitions for state: %s" % self.current_state_name)
