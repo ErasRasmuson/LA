@@ -12,9 +12,9 @@ SET OUTPUT_PATH=%MY_PATH%\LogFile\PreProsessed\%LOG_GROUP_NAME%\
 SET FILE_DATE=2015-12-31
 SET FILE_SAVE_DATE=311215
 
-REM SET INPUT_FILES=journeys_%FILE_DATE%*.csv
+SET INPUT_FILES=journeys_%FILE_DATE%*.csv
 REM SET INPUT_FILES=journeys_%FILE_DATE%-07*.csv
-SET INPUT_FILES=journeys_%FILE_DATE%-07.csv,journeys_%FILE_DATE%-08.csv
+REM SET INPUT_FILES=journeys_%FILE_DATE%-07.csv,journeys_%FILE_DATE%-08.csv
 
 python %SCRIPT_PATH%LogPrep.py ^
 					-input_path %INPUT_PATH% ^

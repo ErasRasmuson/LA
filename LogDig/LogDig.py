@@ -24,6 +24,7 @@ import configparser
 lib_path = os.path.abspath(os.path.join('..', 'LogCom'))
 sys.path.append(lib_path)
 from LogGUI import *
+from MapGEkml import *
 
 g_version = "$Id$"
 
@@ -173,6 +174,7 @@ class ESU:
 			try:
 				ana.variables["INT-LATITUDE-OLD"] = self.last_found_old_variables[self.position_lat_variable_name]
 				ana.variables["INT-LONGITUDE-OLD"] = self.last_found_old_variables[self.position_lon_variable_name]
+
 			except:
 				print("ESU: ERR: Not found longitude or latitude names from columns")
 				sys.exit()
@@ -183,11 +185,20 @@ class ESU:
 				print("ESU: ERR: Not found time column")
 				sys.exit()
 			
-			ana.variables["INT-LATITUDE-NEW"] = self.last_found_new_variables[self.position_lat_variable_name]
-			ana.variables["INT-LONGITUDE-NEW"] = self.last_found_new_variables[self.position_lon_variable_name]
-			
-			ana.variables["INT-LOCAT-TIME-NEW"] = self.last_found_new_variables[self.state_log_time_column]
-						
+
+			lat = self.last_found_new_variables[self.position_lat_variable_name]
+			lon = self.last_found_new_variables[self.position_lon_variable_name]
+			pos_time = self.last_found_new_variables[self.state_log_time_column]
+
+			ana.variables["INT-LATITUDE-NEW"] = lat
+			ana.variables["INT-LONGITUDE-NEW"] = lon
+			ana.variables["INT-LOCAT-TIME-NEW"] = pos_time
+
+			# Kirjoitetaan piste Google Earth kml-tiedostoon
+			coord_list = [[lon,lat]]
+			#write_point_to_kml_file(self.klm_file_path_name,self.position_counter,coord_list,200)	
+			#write_mark_to_kml_file(self.klm_file_path_name,self.position_counter,coord_list,pos_time,200)
+
 			pos_old_in_area = self.check_position_in_area(ana.variables["INT-LONGITUDE-OLD"],ana.variables["INT-LATITUDE-OLD"])
 			pos_new_in_area = self.check_position_in_area(ana.variables["INT-LONGITUDE-NEW"],ana.variables["INT-LATITUDE-NEW"])
 				
@@ -615,7 +626,7 @@ class ESU:
 		return self.onexit(0)
 		
 	def run(self,state_counter,start_time,stop_time,logfile_name,datafile_name,state_log_time_column,
-			state_log_variables,state_data_variables,state_position_variables,state_type):
+			state_log_variables,state_data_variables,state_position_variables,state_type,output_files_path):
 
 		print("")
 		print("----------------------------------------------------------------")
@@ -624,6 +635,11 @@ class ESU:
 		print("ESU: read orig datafile_name : %s" % datafile_name)
 		print("ESU: Search type: %s" % state_type)
 		
+		# Alustetaan Google Earthin kml-tiedosto (vain tarkistusta varten ?!)
+		self.klm_file_path_name = output_files_path + self.name + "_" + str(state_counter) + ".kml"
+		print("ESU: GE kml file_name : %s" % self.klm_file_path_name )
+		init_kml_file(self.klm_file_path_name,"","")
+
 		#self.log_column_numbers = 0
 		#self.log_column_names_list = []
 		
@@ -689,13 +705,21 @@ class ESU:
 				else:
 					return ret
 
+			# Lopputekstit klm-tiedostoon
+			finalize_kml_file(self.klm_file_path_name)
+
 			ana.variables["INT-SERIAL-FOUND-COUNTER"] = serial_found_cnt
 			return ret
 
 		# Muuten haetaan vain yksi tapahtuma
 		else:
-			return self.run_esu_state(state_log_variables,state_data_variables,state_position_variables,
+			ret =  self.run_esu_state(state_log_variables,state_data_variables,state_position_variables,
 							logfile_name,datafile_name,start_time,stop_time,state_type_param)
+
+			# Lopputekstit klm-tiedostoon
+			finalize_kml_file(self.klm_file_path_name)
+
+			return ret
 		
 	def run_esu_state(self,state_log_variables,state_data_variables,state_position_variables,
 					logfile_name,datafile_name,start_time,stop_time,state_type_param):
@@ -790,7 +814,7 @@ class BMU:
 				 state_onentry_function,state_onexit_function,end_state_name,state_logfiles,
 				 state_datafiles,state_settings,state_log_time_column,state_log_variables,state_data_variables,
 				 state_position_variables,state_type,state_start_time_limit,state_stop_time_limit,
-				 gui_enable,gui_seq_draw_mode,gui,state_GUI_line_num,analyzing_mode):
+				 gui_enable,gui_seq_draw_mode,gui,state_GUI_line_num,analyzing_mode,output_files_path):
 				 
 		self.analyze_file_mode=analyze_file_mode
 		print("self.analyze_file_mode = %s\n" % self.analyze_file_mode)		
@@ -853,6 +877,8 @@ class BMU:
 
 		self.analyzing_mode,self.analyzing_col_num = analyzing_mode.split(":")
 		print("self.analyzing_mode = %s, col =%s\n" % (self.analyzing_mode,self.analyzing_col_num ))
+
+		self.output_files_path = output_files_path
 
 		print("")
 		
@@ -1238,7 +1264,8 @@ class BMU:
 									state_log_variables,
 									state_data_variables,
 									state_position_variables,
-									state_type)
+									state_type,
+									self.output_files_path)
 								
 				# Tilan mahdollisen onexit-funktion haku ja ajo tilan ajon jälkeen
 				try:
@@ -1445,7 +1472,8 @@ def analyze_logs(args,gui,source,trace_mode):
 						args.gui_seq_draw_mode,
 						gui,
 						ana.state_GUI_line_num,
-						args.analyzing_mode)
+						args.analyzing_mode,
+						args.output_files_path)
 
 	print("SM name = %s" % SM.name)
 
