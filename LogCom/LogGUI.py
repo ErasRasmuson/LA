@@ -400,6 +400,9 @@ class GUI_AnalyzeArea(GUI,QWidget):
 
 		self.line_auto_zoom = self.calc_auto_zoom(self.delta_secs)
 
+		self.win_width = 200
+		self.first_start = True
+
 		self.trace_mode = "ALL_traces"
 
 		self.reference_pos = 0
@@ -454,7 +457,7 @@ class GUI_AnalyzeArea(GUI,QWidget):
 		#qp.drawText( 60, 40, "Analyze name: %s,  \t  mode: %s, \t  zoom: %.2f" % (self.analyze_file,self.analyzing_mode,self.line_zoom) )
 
 		if self.analyzing_mode == "COMPARE":
-			self.delta_secs = 1800
+			self.delta_secs = 3600
 			self.line_auto_zoom = self.calc_auto_zoom(self.delta_secs)
 
 		# Muodostetaan aika-asteikko
@@ -486,10 +489,10 @@ class GUI_AnalyzeArea(GUI,QWidget):
 			qp.drawStaticText(x_pos,y_pos,QStaticText(text))
 
 		# Muodostetaan tapahtumakohtaiset aikajanat ym. tiedot
-		line_y2 = y_pos
-		start_x = 150
+		self.line_y3 = y_pos
+		self.start_x = 150
 		event_topics = {}
-		line_gap = 150
+		self.line_gap = 150
 		for state_name in self.state_GUI_line_num.keys():
 			GUI_line_num = self.state_GUI_line_num[state_name]
 
@@ -501,25 +504,21 @@ class GUI_AnalyzeArea(GUI,QWidget):
 			else:
 				event_topics[i] = state_name + " (" + str(state_order) + ".)"
 
-			self.event_line_x1[i] =  start_x + line_gap * i
+			self.event_line_x1[i] =  self.start_x + self.line_gap * i
 
 			print(" %3d, %s, %s" % (i,self.event_line_x1[i],event_topics[i]))
 
-			line_x2 = self.event_line_x1[i]
+			#line_x2 = self.event_line_x1[i]
+			self.drawVerticalLine(qp,i,event_topics[i])
 
-			pen = QPen(QColor(127,127,127,127), 2, Qt.DashLine)
-			qp.setPen(pen)
-			qp.drawLine(self.event_line_x1[i],self.line_y1,line_x2,line_y2)
+		# Sovitetaan ikkunan leveys sopivaksi, vain kerran alussa
+		if self.first_start == True:
+			#win_width = len(self.state_GUI_line_num.keys()) * line_gap + self.start_x
+			self.win_width = len(event_topics.keys()) * self.line_gap + self.start_x + 100
+			self.resize(self.win_width,self.height())
+			self.first_start = False
 
-			pen = QPen(Qt.black, 2, Qt.SolidLine)
-			qp.setPen(pen)
-			qp.drawText( self.event_line_x1[i], self.line_y1 - 10 , event_topics[i])
-
-		# Sovitetaan ikkunan leveys sopivaksi
-		#win_width = len(self.state_GUI_line_num.keys()) * line_gap + start_x
-		win_width = len(event_topics.keys()) * line_gap + start_x + 100
-		self.resize(win_width,self.height())
-		#print(" x=%s, y=%s, w=%s, h=%s, win_width=%s" % (self.x(),self.y(),self.width(),self.height(),win_width))
+		#print(" x=%s, y=%s, w=%s, h=%s, win_width=%s" % (self.x(),self.y(),self.width(),self.height(),self.win_width))
 
 		# Analysoidaan lokidata ja sen kautta päivitetään GUI
 		self.generate_callback_function(self.args,self,"Ana",self.trace_mode)
@@ -529,6 +528,17 @@ class GUI_AnalyzeArea(GUI,QWidget):
 		print("width: %s, height: %s" % (screen.width(),screen.height()))
 		print("Analyze area: width: %s, height: %s, x: %s, y: %s" % (self.width(),self.height(),self.x(),self.y()))
 
+	def drawVerticalLine(self,qp,event_pos,text_str):
+
+		line_x2 = self.start_x + self.line_gap * event_pos
+
+		pen = QPen(QColor(127,127,127,127), 2, Qt.DashLine)
+		qp.setPen(pen)
+		qp.drawLine(line_x2,self.line_y1,line_x2,self.line_y3)
+
+		pen = QPen(Qt.black, 2, Qt.SolidLine)
+		qp.setPen(pen)
+		qp.drawText(line_x2, self.line_y1 - 10 , text_str)
 
 	def drawEvent(self,qp,event_pos,event_offset,timestamp,text,symbol):
 
@@ -539,6 +549,11 @@ class GUI_AnalyzeArea(GUI,QWidget):
 		width_half = int(width / 2.0)
 		x_pos = self.event_line_x1[int(event_pos)] - width_half + event_offset 
 		y_pos = self.line_y1 - width_half + self.calcEventPos(timestamp) * self.line_zoom
+
+		# Levennetään ikkunaa tarvittaessa
+		if x_pos > self.win_width:
+			self.win_width = x_pos + 100
+			self.resize(self.win_width ,self.height())
 
 		if symbol == "circle":
 			pen = QPen(Qt.black, 1, Qt.SolidLine)
@@ -610,6 +625,11 @@ class GUI_AnalyzeArea(GUI,QWidget):
 
 		x_pos2 = self.event_line_x1[int(event_pos2)] + event_offset_2
 		#print("x_pos2=%s" % (x_pos2))
+
+		# Levennetään ikkunaa tarvittaessa
+		if x_pos > self.win_width:
+			self.win_width = x_pos + 100
+			self.resize(self.win_width ,self.height())
 
 		self.draw_line(qp,x_pos,y_pos,x_pos2,y_pos2,"",color)
 

@@ -67,6 +67,13 @@ class ESU:
 	log_column_numbers = 0
 	position_lon_variable_name = ""
 	position_lat_variable_name = ""
+	log_lines = []
+	log_line_index = 0
+	line_counter = 0
+	line_sel_counter = 0
+	line_found_counter = 0
+	error_counter = 0
+	last_line = ""
 
 	def __init__(self,name,gui_enable,gui,state_GUI_line_num):
 
@@ -147,14 +154,25 @@ class ESU:
 		lon = float(lon)
 		lat = float(lat)
 		
+		# Lasketaan koordinaatin etäisyys alueen keskipisteeseen. Tämä vain lisätietoa !!
+		lon_dist = self.position_area_center_lon - lon
+		lat_dist = self.position_area_center_lat - lat
+		
+		# Pitäisikö olla asetus, jolla laatikon koko voidaan ylikirjoittaa ?! 
+
 		# Tarkistetaan onko koordinaatti suorakaiteen muotoisen alueen sisällä
+		inside = False
 		if lon < float(self.position_area_right_up_lon):
 			if lon > float(self.position_area_left_down_lon):
 				if lat < float(self.position_area_right_up_lat):
 					if lat > float(self.position_area_left_down_lat):
-						return True
-		return False
-		
+						inside = True
+						#return True
+
+		#print("lon_dist = %.5f, lat_dist = %0.5f, inside = %s" % (lon_dist,lat_dist,inside))
+		#return False
+		return inside
+
 	def check_position_event(self,state_type_param):
 		
 		#print("check_position_event: %s" % state_type_param)
@@ -195,7 +213,7 @@ class ESU:
 			ana.variables["INT-LOCAT-TIME-NEW"] = pos_time
 
 			# Kirjoitetaan piste Google Earth kml-tiedostoon
-			coord_list = [[lon,lat]]
+			#coord_list = [[lon,lat]]
 			#write_point_to_kml_file(self.klm_file_path_name,self.position_counter,coord_list,200)	
 			#write_mark_to_kml_file(self.klm_file_path_name,self.position_counter,coord_list,pos_time,200)
 
@@ -405,20 +423,20 @@ class ESU:
 			f = open(datafile_name, 'r')
 			lines = f.readlines()
 			f.close()
-			line_counter = 0
+			data_line_counter = 0
 			# Kaydaan lapi loki-tiedoston rivit
 			for line in lines:
-				line_counter += 1
+				data_line_counter += 1
 				
 				# Poistetaan rivinvaihdot riviltä
 				line = line.replace("\n","")
 				
-				#print("%5d: %s" % (line_counter,line))
+				#print("%5d: %s" % (data_line_counter,line))
 				
 				#line_list = line.split("\t")
 				line_list = line.split(",")
 				line_list_len = len(line_list)
-				#print("ESU: line_list: %5d: %s" % (line_counter,line_list))
+				#print("ESU: line_list: %5d: %s" % (data_line_counter,line_list))
 				if line_list_len > 2:
 					
 					counter = line_list[0]
@@ -436,6 +454,15 @@ class ESU:
 					print("ESU: ERR: Incorrect position data: %s" % (line))
 					return False
 					
+			# Lasketaan alueen keskipiste (voisi tulla valmiinakin jostain ?)
+			pos_area_width = float(self.position_area_right_up_lon) - float(self.position_area_left_down_lon) 
+			pos_area_height = float(self.position_area_right_up_lat) - float(self.position_area_left_down_lat)
+			self.position_area_center_lon = pos_area_width / 2 + float(self.position_area_left_down_lon)
+			self.position_area_center_lat = pos_area_height / 2 + float(self.position_area_left_down_lat)
+
+			print("position_area_center_lon = %s" % self.position_area_center_lon)
+			print("position_area_center_lat = %s" % self.position_area_center_lat)
+
 			#print("position_area_left_down_lon = %s" % self.position_area_left_down_lon)
 			#print("position_area_left_down_lat = %s" % self.position_area_left_down_lat)
 			#print("position_area_right_up_lon  = %s" % self.position_area_right_up_lon)
@@ -450,107 +477,138 @@ class ESU:
 		#	print("ESU: ERR: Not found datafile: %s" % datafile_name)
 		#	return self.onexit(-1)
 		
-	def read_logfile(self,logfile_name,start_time,stop_time,state_type_param):
+	def read_logfile(self,logfile_name,start_time,stop_time,state_type_param,state_type_param2,serial_found_cnt):
 	
-		self.log_column_numbers = 0
-		self.log_column_names_list = []
+		#self.log_column_numbers = 0
+		#self.log_column_names_list = []
 		
 		last_read_variables = {}
 		self.last_found_variables = {}
 		
-		if os.path.isfile(logfile_name):
+		#print("state_type_param: %s, state_type_param2: %s, serial_found_cnt: %s" % (state_type_param,state_type_param2,serial_found_cnt))
+
+		read_log = False
+
+		if state_type_param2 != "Serial":
+			read_log = True
+		elif serial_found_cnt == -1:
+			read_log = True
+
+		if read_log == True:
+			if os.path.isfile(logfile_name):
+			
+				print(" --- ESU: Read logfile: %s" % logfile_name)
+
+				self.log_column_numbers = 0
+				self.log_column_names_list = []
+
+				self.log_lines = []
+				f = open(logfile_name, 'r')
+				self.log_lines = f.readlines()
+				f.close()
+				
+				self.line_counter = 0
+				self.line_sel_counter = 0
+				self.line_found_counter = 0
+				self.error_counter = 0
+				self.last_line = ""
+				
+				self.position_counter = 0
+
+				self.log_line_index = 0
+						
+			else:
+				print("ESU: ERR: Not found logfile: %s" % logfile_name)
+				return self.onexit(-1)
+
+		# Kaydaan lapi loki-tiedoston rivit
+		#for line in self.log_lines:
+
+		print(" --- ESU: log_line_index = %s" % self.log_line_index )
+
+		while self.log_line_index < len(self.log_lines):
+
+			line = self.log_lines[self.log_line_index]
+			self.log_line_index += 1
+
+			# Hylätään tyhjät rivit
+			if len(line) < 2:
+				continue
 		
-			f = open(logfile_name, 'r')
-			lines = f.readlines()
-			f.close()
+			# Poistetaan rivinvaihdot riviltä
+			line = line.replace("\n","")
+		
+			self.line_counter += 1
+			#line_list = line.split("\t")
+			line_list = line.split(",")
+			line_list_len = len(line_list)
 			
-			line_counter = 0
-			line_sel_counter = 0
-			line_found_counter = 0
-			error_counter = 0
-			last_line = ""
+			#print("ESU: line_list: %5d: %s" % (self.line_counter,line_list))
+			#print("ESU: line_list_len: %d" % (line_list_len))
 			
-			self.position_counter = 0
-						
-			# Kaydaan lapi loki-tiedoston rivit
-			for line in lines:
+			# Otsikkorivi
+			if self.line_counter == 1:
+
+				# Tätä ei välttämättä tarvita ?!
+				#if not "Counter" in line_list[0]:
+				#	print("ESU: ERR: Illegal log-file: %s" % logfile_name)
+				#	self.onexit(-1)
+				#	return self.onexit(0)
+					
+				# Muodostetaan muuttujat
+				for column_name in line_list:
+
+					# Poistetaan mahdolliset spacet alusta ja lopusta
+					#column_name = column_name.lstrip().rstrip()
+
+					last_read_variables[column_name]=""
+					
+				# Otsikon sarakkeiden nimet ja lukumäärä talteen
+				self.log_column_names_list = line_list
+				self.log_column_numbers = line_list_len
 			
-				# Hylätään tyhjät rivit
-				if len(line) < 2:
+				print("ESU: Headerline: \n%s" % line)
+				
+			# Muuten data-rivi
+			else:
+			
+				#if self.line_counter > 5:
+				#	sys.exit()
+			
+				# Jos rivilla ei ollut sarakkeita saman verran kuin otsikossa,
+				# hylätään rivi
+				if line_list_len != self.log_column_numbers:
+					print(" --- ESU: Number of columns are illegal: %s - %s" % (line_list_len,self.log_column_numbers))
 					continue
-			
-				# Poistetaan rivinvaihdot riviltä
-				line = line.replace("\n","")
-			
-				line_counter += 1
-				#line_list = line.split("\t")
-				line_list = line.split(",")
-				line_list_len = len(line_list)
 				
-				#print("ESU: line_list: %5d: %s" % (line_counter,line_list))
-				#print("ESU: line_list_len: %d" % (line_list_len))
+				self.line_sel_counter += 1
 				
-				# Otsikkorivi
-				if line_counter == 1:
+				# Luetaan rivin sarakkeiden arvot luettujen muuttujiin
+				col_index = 0
+				for column_name in self.log_column_names_list:
+					var_value = line_list[col_index]
 
-					# Tätä ei välttämättä tarvita ?!
-					#if not "Counter" in line_list[0]:
-					#	print("ESU: ERR: Illegal log-file: %s" % logfile_name)
-					#	self.onexit(-1)
-					#	return self.onexit(0)
-						
-					# Muodostetaan muuttujat
-					for column_name in line_list:
+					# Poistetaan mahdolliset spacet alusta ja lopusta
+					#var_value = var_value.lstrip().rstrip()
 
-						# Poistetaan mahdolliset spacet alusta ja lopusta
-						#column_name = column_name.lstrip().rstrip()
-
-						last_read_variables[column_name]=""
-						
-					# Otsikon sarakkeiden nimet ja lukumäärä talteen
-					self.log_column_names_list = line_list
-					self.log_column_numbers = line_list_len
-				
-					#print("ESU: Headerline: \n%s" % line)
+					last_read_variables[column_name] = var_value
+					#print("ESU: %5d: Var name: %-20s value: \"%s\"" % (col_index,column_name,last_read_variables[column_name]))
+					col_index += 1
 					
-				# Muuten data-rivi
-				else:
+				#timestamp_str = last_read_variables["TIMESTAMP"]
+				timestamp_str = last_read_variables[self.state_log_time_column]
+				line_timestamp = datetime.strptime(timestamp_str,"%Y-%m-%d %H:%M:%S")
 				
-					#if line_counter > 5:
-					#	sys.exit()
-				
-					# Jos rivilla ei ollut sarakkeita saman verran kuin otsikossa,
-					# hylätään rivi
-					if line_list_len != self.log_column_numbers:
-						continue
-					
-					line_sel_counter += 1
-					
-					# Luetaan rivin sarakkeiden arvot luettujen muuttujiin
-					col_index = 0
-					for column_name in self.log_column_names_list:
-						var_value = line_list[col_index]
+				#print("line_timestamp = %s, start_time = %s, stop_time = %s" % (line_timestamp,start_time,stop_time))
 
-						# Poistetaan mahdolliset spacet alusta ja lopusta
-						#var_value = var_value.lstrip().rstrip()
+				# Piirretään löydetty tapahtuma GUI:hin
+				#if self.gui_enable == 1:
+				#	self.draw_event(self.name,line_timestamp,"")
 
-						last_read_variables[column_name] = var_value
-						#print("ESU: %5d: Var name: %-20s value: \"%s\"" % (col_index,column_name,last_read_variables[column_name]))
-						col_index += 1
-						
-					#timestamp_str = last_read_variables["TIMESTAMP"]
-					timestamp_str = last_read_variables[self.state_log_time_column]
-					line_timestamp = datetime.strptime(timestamp_str,"%Y-%m-%d %H:%M:%S")
-					
-					#print("line_timestamp = %s, start_time = %s, stop_time = %s" % (line_timestamp,start_time,stop_time))
-
-					# Piirretään löydetty tapahtuma GUI:hin
-					#if self.gui_enable == 1:
-					#	self.draw_event(self.name,line_timestamp,"")
-
-					# Tarkistetaan aikaväli
-					if line_timestamp >= start_time and line_timestamp < stop_time:
-						line_sel_counter += 1
+				# Tarkistetaan aikaväli
+				if line_timestamp >= start_time:
+					if line_timestamp < stop_time:
+						self.line_sel_counter += 1
 						#print("ESU: Line %s in time-gap: %s -- %s" % (line,ana.variables["START-TIMESTAMP"],ana.variables["STOP-TIMESTAMP"]))
 						#print("ESU: Line %s in time-gap: %s -- %s" % (line,start_time,stop_time))
 						
@@ -575,12 +633,12 @@ class ESU:
 
 						if ok_count == var_count:
 						
-							line_found_counter += 1
+							self.line_found_counter += 1
 
 							# Viimeiset löydetyt muuttujat talteen
 							for column_name in self.log_column_names_list:
 								self.last_found_variables[column_name] = last_read_variables[column_name]
-								last_line = line
+								self.last_line = line
 								self.line_found_timestamp = line_timestamp
 						
 							# Jos oli ensimmäisen tapahtuman haku
@@ -604,25 +662,27 @@ class ESU:
 									return self.onexit(1)
 
 						# Pitää myös "poistaa" käytetty viesti, että sitä ei oteta uudestaan !!??
-			
-			print("ESU: line_counter       = %d" % line_counter)
-			print("ESU: line_found_counter = %d" % line_found_counter)
-			print("ESU: line_sel_counter   = %d" % line_sel_counter)
-			
-			# Jos oli viimeisen tapahtuman haku
-			if state_type_param == "Last":
-				if line_found_counter == 0:
-					return self.onexit(0)
-				else:
-					
-					print("ESU: %s: Last event was found" % (self.name))
-					print("ESU: line      : \n%s" % (last_line))
-					return self.onexit(1)
-			
-		else:
-			print("ESU: ERR: Not found logfile: %s" % logfile_name)
-			return self.onexit(-1)
-			
+
+					else:
+						# Ei lötynyt aikaväliltä, lopetetaan haku. Ei lueta turhaan loppua !
+						print(" *** ESU: Stops searching: stop time is exceeded !")
+						#return self.onexit(0)
+						break
+
+		print("ESU: line_counter       = %d" % self.line_counter)
+		print("ESU: line_found_counter = %d" % self.line_found_counter)
+		print("ESU: line_sel_counter   = %d" % self.line_sel_counter)
+		
+		# Jos oli viimeisen tapahtuman haku
+		if state_type_param == "Last":
+			if self.line_found_counter == 0:
+				return self.onexit(0)
+			else:
+				
+				print("ESU: %s: Last event was found" % (self.name))
+				print("ESU: line      : \n%s" % (self.last_line))
+				return self.onexit(1)
+						
 		return self.onexit(0)
 		
 	def run(self,state_counter,start_time,stop_time,logfile_name,datafile_name,state_log_time_column,
@@ -636,9 +696,9 @@ class ESU:
 		print("ESU: Search type: %s" % state_type)
 		
 		# Alustetaan Google Earthin kml-tiedosto (vain tarkistusta varten ?!)
-		self.klm_file_path_name = output_files_path + self.name + "_" + str(state_counter) + ".kml"
-		print("ESU: GE kml file_name : %s" % self.klm_file_path_name )
-		init_kml_file(self.klm_file_path_name,"","")
+		#self.klm_file_path_name = output_files_path + self.name + "_" + str(state_counter) + ".kml"
+		#print("ESU: GE kml file_name : %s" % self.klm_file_path_name )
+		#init_kml_file(self.klm_file_path_name,"","")
 
 		#self.log_column_numbers = 0
 		#self.log_column_names_list = []
@@ -682,31 +742,40 @@ class ESU:
 
 			serial_vars_list = serial_values.split(",")
 
-			serial_found_cnt = 0
+			serial_found_cnt = -1
 
 			print("ESU: names of serial areas: %s" % serial_vars_list)
 			for serial_var in serial_vars_list:
 
-				print("\nESU: Start to serial search for area:  %s ------------------ " % serial_var)
+				print("\nESU: Start to serial search for area:  %s, %s ------------------ " % (serial_var,start_time))
 
 				state_data_variables = "SERIAL-ID"
 				ana.variables["SERIAL-ID"] = serial_var
 				ret = self.run_esu_state(state_log_variables,state_data_variables,state_position_variables,
-							logfile_name,datafile_name,start_time,stop_time,state_type_param)
+							logfile_name,datafile_name,start_time,stop_time,
+							state_type_param,state_type_param2,serial_found_cnt)
 
 				if ret == "Found":
+					#start_time = ana.variables["INT-FOUND-TIMESTAMP"]
+
+					# Kaikki löydetyt talteen
+					#ser_var_name = "INT-SERIAL-FOUND-TIMESTAMP-%s" % (serial_found_cnt)
+					#ana.variables[ser_var_name] = start_time
+					serial_found_cnt += 1
+
+				if serial_found_cnt > -1:
 					start_time = ana.variables["INT-FOUND-TIMESTAMP"]
 
 					# Kaikki löydetyt talteen
 					ser_var_name = "INT-SERIAL-FOUND-TIMESTAMP-%s" % (serial_found_cnt)
 					ana.variables[ser_var_name] = start_time
-					serial_found_cnt += 1
+					#serial_found_cnt += 1
 
-				else:
-					return ret
+				if ret == "Not found":
+					break	
 
 			# Lopputekstit klm-tiedostoon
-			finalize_kml_file(self.klm_file_path_name)
+			#finalize_kml_file(self.klm_file_path_name)
 
 			ana.variables["INT-SERIAL-FOUND-COUNTER"] = serial_found_cnt
 			return ret
@@ -714,15 +783,17 @@ class ESU:
 		# Muuten haetaan vain yksi tapahtuma
 		else:
 			ret =  self.run_esu_state(state_log_variables,state_data_variables,state_position_variables,
-							logfile_name,datafile_name,start_time,stop_time,state_type_param)
+							logfile_name,datafile_name,start_time,stop_time,
+							state_type_param,state_type_param2,0)
 
 			# Lopputekstit klm-tiedostoon
-			finalize_kml_file(self.klm_file_path_name)
+			#finalize_kml_file(self.klm_file_path_name)
 
 			return ret
 		
 	def run_esu_state(self,state_log_variables,state_data_variables,state_position_variables,
-					logfile_name,datafile_name,start_time,stop_time,state_type_param):
+					logfile_name,datafile_name,start_time,stop_time,
+					state_type_param,state_type_param2,serial_found_cnt):
 
 		# Luetaan inputtina saadut loki-, data- ja paikkatieto-muuttujat
 		ret = self.read_input_variables(state_log_variables,state_data_variables,state_position_variables)
@@ -756,7 +827,7 @@ class ESU:
 			self.onexit(-1)
 		
 		# Luetaan lokitiedosto ja haetaan sieltä tiedot log-muuttujilla halutulla aikavälillä
-		return self.read_logfile(logfile_name,start_time,stop_time,state_type_param)
+		return self.read_logfile(logfile_name,start_time,stop_time,state_type_param,state_type_param2,serial_found_cnt)
 
 #******************************************************************************
 #       
@@ -963,13 +1034,16 @@ class BMU:
 					old_ser_offset = 0
 					old_ser_event_num = old_event_num 
 					new_ser_event_num = new_event_num 
-					for i in range(state_ser_counter-1):
+					for i in range(state_ser_counter):
 
 						new_ser_time,ind = self.state_found_serial_metadata[state_name,i]
-						new_ser_offset = i * 20
+						new_ser_offset = i * 40
 						#print("drawEventSequence: ser_time_found: %s, ind: %s" % (new_ser_time,ind))
 						
-						self.draw_event(state_name,new_ser_offset,new_ser_time,str(new_ser_time))
+						event_str = ""
+						if i == 0:
+							event_str = str(new_ser_time)
+						self.draw_event(state_name,new_ser_offset,new_ser_time,event_str)
 
 						self.gui.drawTraceLine(self.gui.qp,old_ser_event_num,old_ser_offset,old_ser_time,
 												new_ser_event_num,new_ser_offset,new_ser_time,color)
@@ -978,9 +1052,11 @@ class BMU:
 						old_ser_offset = new_ser_offset
 						old_ser_event_num = new_ser_event_num 
 
-					self.gui.drawTraceLine(self.gui.qp,old_ser_event_num,old_ser_offset,old_ser_time,
-										new_event_num,0,new_time,color)
-					self.draw_event(state_name,0,new_time,str(new_time))
+					self.gui.drawVerticalLine(self.gui.qp,i,"SERIAL STOP")
+
+					#self.gui.drawTraceLine(self.gui.qp,old_ser_event_num,old_ser_offset,old_ser_time,
+					#					new_event_num,0,new_time,color)
+					#self.draw_event(state_name,0,new_time,str(new_time))
 
 				# Muuten piirretään vain yksi linkki
 				else:					
