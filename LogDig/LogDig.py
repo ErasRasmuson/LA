@@ -567,7 +567,7 @@ class ESU:
 				self.log_column_names_list = line_list
 				self.log_column_numbers = line_list_len
 			
-				print("ESU: Headerline: \n%s" % line)
+				#print("ESU: Headerline: \n%s" % line)
 				
 			# Muuten data-rivi
 			else:
@@ -747,7 +747,7 @@ class ESU:
 			print("ESU: names of serial areas: %s" % serial_vars_list)
 			for serial_var in serial_vars_list:
 
-				print("\nESU: Start to serial search for area:  %s, %s ------------------ " % (serial_var,start_time))
+				print("\nESU: Start to serial search for area:  %5d, %s, start: %s stop: %s --------" % (serial_found_cnt,serial_var,start_time,stop_time))
 
 				state_data_variables = "SERIAL-ID"
 				ana.variables["SERIAL-ID"] = serial_var
@@ -756,11 +756,8 @@ class ESU:
 							state_type_param,state_type_param2,serial_found_cnt)
 
 				if ret == "Found":
-					#start_time = ana.variables["INT-FOUND-TIMESTAMP"]
 
 					# Kaikki löydetyt talteen
-					#ser_var_name = "INT-SERIAL-FOUND-TIMESTAMP-%s" % (serial_found_cnt)
-					#ana.variables[ser_var_name] = start_time
 					serial_found_cnt += 1
 
 				if serial_found_cnt > -1:
@@ -768,14 +765,15 @@ class ESU:
 
 					# Kaikki löydetyt talteen
 					ser_var_name = "INT-SERIAL-FOUND-TIMESTAMP-%s" % (serial_found_cnt)
-					ana.variables[ser_var_name] = start_time
-					#serial_found_cnt += 1
+					ana.variables[ser_var_name] = start_time,serial_var
 
 				if ret == "Not found":
 					break	
 
 			# Lopputekstit klm-tiedostoon
 			#finalize_kml_file(self.klm_file_path_name)
+
+			print("## Stops serial searching, found: %s" % serial_found_cnt)
 
 			ana.variables["INT-SERIAL-FOUND-COUNTER"] = serial_found_cnt
 			return ret
@@ -1005,7 +1003,7 @@ class BMU:
 			# Luetaan tilan metadata: aika ja suoritusjärjestys
 			state_time,state_order = self.state_found_metadata[state_name]
 
-			#print(" *** drawEventSequence: state_cnt=%s, trace_cnt=%s" % (state_cnt,self.trace_cnt))
+			print(" *** drawEventSequence: state_cnt=%s, trace_cnt=%s" % (state_cnt,self.trace_cnt))
 
 			#print("   %4d: state: %-20s : %s" % (state_cnt,state_name,str(state_time)))
 
@@ -1025,8 +1023,12 @@ class BMU:
 				except:
 					print("BMU: ERR: Not found color for cnt: %s" % self.color_list_counter)
 
+				print(" ******* drawEventSequence MIDDLE 1: %s" % state_name)
+
 				# Jos tilassa sarjahaun tuloksia, piirretään niiden linkit tähän väliin
 				state_ser_counter = self.state_found_serial_metadata_counter[state_name]
+
+				print(" ******* drawEventSequence MIDDLE 2: %s" % state_name)
 
 				if state_ser_counter > 0:
 					print("drawEventSequence: state: %s ser_counter: %s" % (state_name,state_ser_counter))
@@ -1036,7 +1038,8 @@ class BMU:
 					new_ser_event_num = new_event_num 
 					for i in range(state_ser_counter):
 
-						new_ser_time,ind = self.state_found_serial_metadata[state_name,i]
+						new_ser_time,ser_name,ind = self.state_found_serial_metadata[state_name,i]
+
 						new_ser_offset = i * 40
 						#print("drawEventSequence: ser_time_found: %s, ind: %s" % (new_ser_time,ind))
 						
@@ -1048,11 +1051,17 @@ class BMU:
 						self.gui.drawTraceLine(self.gui.qp,old_ser_event_num,old_ser_offset,old_ser_time,
 												new_ser_event_num,new_ser_offset,new_ser_time,color)
 
+						self.gui.drawVerticalLine(self.gui.qp,int(new_ser_event_num),new_ser_offset,1)
+						ser_str = str(i+1) + "." 
+						self.gui.drawVerticalText(self.gui.qp,int(new_ser_event_num),new_ser_offset,ser_str,22)
+						ser_str = ser_name
+						self.gui.drawVerticalText(self.gui.qp,int(new_ser_event_num),new_ser_offset,ser_str,10)
+
 						old_ser_time = new_ser_time
 						old_ser_offset = new_ser_offset
 						old_ser_event_num = new_ser_event_num 
 
-					self.gui.drawVerticalLine(self.gui.qp,i,"SERIAL STOP")
+					#self.gui.drawVerticalLine(self.gui.qp,int(new_ser_event_num),new_ser_offset,"SERIAL STOP",2)
 
 					#self.gui.drawTraceLine(self.gui.qp,old_ser_event_num,old_ser_offset,old_ser_time,
 					#					new_event_num,0,new_time,color)
@@ -1071,6 +1080,8 @@ class BMU:
 			state_cnt += 1
 
 		self.trace_cnt += 1
+
+		print(" ******* drawEventSequence END")
 
 	def draw_timelimits(self,state_name,timestamp_start,timestamp_stop):
 
@@ -1363,16 +1374,19 @@ class BMU:
 					time_found = ana.variables["INT-FOUND-TIMESTAMP"]
 					self.state_found_serial_metadata_counter[self.current_state_name] = 0
 
+					# Huom! sarjahaku piirretään vaikka tulisi "Not found"
 					# Jos käytetty sarjahakua ja myös löydetty tapahtumia
 					serial_found_cnt = int(ana.variables["INT-SERIAL-FOUND-COUNTER"])
 					if serial_found_cnt > 0:
 
 						for i in range(serial_found_cnt):
 							ser_var_name = "INT-SERIAL-FOUND-TIMESTAMP-%s" % (i)
-							ser_time_found = ana.variables[ser_var_name]
-							self.state_found_serial_metadata[self.current_state_name,i] = ser_time_found,i
-							self.state_found_serial_metadata_counter[self.current_state_name] = serial_found_cnt
+							ser_time_found,ser_name = ana.variables[ser_var_name]
+							self.state_found_serial_metadata[self.current_state_name,i] = ser_time_found,ser_name,i
+							#self.state_found_serial_metadata_counter[self.current_state_name] = serial_found_cnt
 							time_found = ser_time_found
+
+						self.state_found_serial_metadata_counter[self.current_state_name] = serial_found_cnt
 
 					self.state_found_metadata[self.current_state_name] = time_found,self.state_found_counter
 

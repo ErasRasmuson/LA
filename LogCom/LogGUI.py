@@ -468,7 +468,7 @@ class GUI_AnalyzeArea(GUI,QWidget):
 		#line_zoom = self.zoom_factor
 		self.line_zoom = self.line_auto_zoom
 
-		qp.drawText( 60, 40, "Analyze name: %s,  \t  mode: %s : col: %s, \t  zoom: %.2f" % 
+		qp.drawText( 60, 25, "Analyze name: %s,  \t  mode: %s : col: %s, \t  zoom: %.2f" % 
 				(self.analyze_file,self.analyzing_mode,self.analyzing_col_num,self.line_zoom) )
 
 		x_pos = 10
@@ -509,7 +509,8 @@ class GUI_AnalyzeArea(GUI,QWidget):
 			print(" %3d, %s, %s" % (i,self.event_line_x1[i],event_topics[i]))
 
 			#line_x2 = self.event_line_x1[i]
-			self.drawVerticalLine(qp,i,event_topics[i])
+			self.drawVerticalLine(qp,i,0,2)
+			self.drawVerticalText(qp,i,0,event_topics[i],35)
 
 		# Sovitetaan ikkunan leveys sopivaksi, vain kerran alussa
 		if self.first_start == True:
@@ -528,17 +529,32 @@ class GUI_AnalyzeArea(GUI,QWidget):
 		print("width: %s, height: %s" % (screen.width(),screen.height()))
 		print("Analyze area: width: %s, height: %s, x: %s, y: %s" % (self.width(),self.height(),self.x(),self.y()))
 
-	def drawVerticalLine(self,qp,event_pos,text_str):
+	def drawVerticalLine(self,qp,event_pos,event_offset,line_width):
 
-		line_x2 = self.start_x + self.line_gap * event_pos
+		line_x2 =  event_offset + self.start_x + self.line_gap * event_pos
 
-		pen = QPen(QColor(127,127,127,127), 2, Qt.DashLine)
+		# Levennetään ikkunaa tarvittaessa
+		if line_x2 > self.win_width:
+			self.win_width = line_x2 + 100
+			self.resize(self.win_width ,self.height())
+
+		pen = QPen(QColor(127,127,127,127), line_width, Qt.DashLine)
 		qp.setPen(pen)
 		qp.drawLine(line_x2,self.line_y1,line_x2,self.line_y3)
 
+
+	def drawVerticalText(self,qp,event_pos,event_offset,text_str,text_offset):
+
+		line_x2 =  event_offset + self.start_x + self.line_gap * event_pos
+
+		# Levennetään ikkunaa tarvittaessa
+		if line_x2 > self.win_width:
+			self.win_width = line_x2 + 100
+			self.resize(self.win_width ,self.height())
+
 		pen = QPen(Qt.black, 2, Qt.SolidLine)
 		qp.setPen(pen)
-		qp.drawText(line_x2, self.line_y1 - 10 , text_str)
+		qp.drawText(line_x2, self.line_y1 - text_offset , text_str)
 
 	def drawEvent(self,qp,event_pos,event_offset,timestamp,text,symbol):
 
