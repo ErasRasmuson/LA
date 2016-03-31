@@ -457,7 +457,7 @@ class GUI_AnalyzeArea(GUI,QWidget):
 		#qp.drawText( 60, 40, "Analyze name: %s,  \t  mode: %s, \t  zoom: %.2f" % (self.analyze_file,self.analyzing_mode,self.line_zoom) )
 
 		if self.analyzing_mode == "COMPARE":
-			self.delta_secs = 3600
+			self.delta_secs = 3000
 			self.line_auto_zoom = self.calc_auto_zoom(self.delta_secs)
 
 		# Muodostetaan aika-asteikko

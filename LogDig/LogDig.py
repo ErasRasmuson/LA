@@ -75,7 +75,7 @@ class ESU:
 	error_counter = 0
 	last_line = ""
 
-	def __init__(self,name,gui_enable,gui,state_GUI_line_num):
+	def __init__(self,name,gui_enable,gui,state_GUI_line_num,ge_kml_enable):
 
 		self.name=name
 		self.gui_enable = gui_enable
@@ -83,6 +83,9 @@ class ESU:
 
 		self.state_GUI_line_num = state_GUI_line_num
 		print("ESU: state_GUI_line_num = %s" % self.state_GUI_line_num)
+
+		self.ge_kml_enable = ge_kml_enable
+		print("ESU: ge_kml_enable = %s" % self.ge_kml_enable)
 
 	#def onentry(self,):
 		# Tarviiko ?
@@ -213,9 +216,10 @@ class ESU:
 			ana.variables["INT-LOCAT-TIME-NEW"] = pos_time
 
 			# Kirjoitetaan piste Google Earth kml-tiedostoon
-			#coord_list = [[lon,lat]]
-			#write_point_to_kml_file(self.klm_file_path_name,self.position_counter,coord_list,200)	
-			#write_mark_to_kml_file(self.klm_file_path_name,self.position_counter,coord_list,pos_time,200)
+			if self.ge_kml_enable == 1:
+				coord_list = [[lon,lat]]
+				#write_point_to_kml_file(self.klm_file_path_name,self.position_counter,coord_list,200)	
+				write_mark_to_kml_file(self.klm_file_path_name,self.position_counter,coord_list,pos_time,200)
 
 			pos_old_in_area = self.check_position_in_area(ana.variables["INT-LONGITUDE-OLD"],ana.variables["INT-LATITUDE-OLD"])
 			pos_new_in_area = self.check_position_in_area(ana.variables["INT-LONGITUDE-NEW"],ana.variables["INT-LATITUDE-NEW"])
@@ -460,8 +464,8 @@ class ESU:
 			self.position_area_center_lon = pos_area_width / 2 + float(self.position_area_left_down_lon)
 			self.position_area_center_lat = pos_area_height / 2 + float(self.position_area_left_down_lat)
 
-			print("position_area_center_lon = %s" % self.position_area_center_lon)
-			print("position_area_center_lat = %s" % self.position_area_center_lat)
+			#print("position_area_center_lon = %s" % self.position_area_center_lon)
+			#print("position_area_center_lat = %s" % self.position_area_center_lat)
 
 			#print("position_area_left_down_lon = %s" % self.position_area_left_down_lon)
 			#print("position_area_left_down_lat = %s" % self.position_area_left_down_lat)
@@ -664,8 +668,9 @@ class ESU:
 						# Pitää myös "poistaa" käytetty viesti, että sitä ei oteta uudestaan !!??
 
 					else:
-						# Ei lötynyt aikaväliltä, lopetetaan haku. Ei lueta turhaan loppua !
-						print(" *** ESU: Stops searching: stop time is exceeded !")
+						# Ei löytynyt aikaväliltä, lopetetaan haku. Ei lueta turhaan loppua !
+						print(" *** ESU: Stops searching: stop time is exceeded: %s" % line_timestamp)
+						print(" *** ESU: Last line: %s" % line)
 						#return self.onexit(0)
 						break
 
@@ -696,9 +701,10 @@ class ESU:
 		print("ESU: Search type: %s" % state_type)
 		
 		# Alustetaan Google Earthin kml-tiedosto (vain tarkistusta varten ?!)
-		#self.klm_file_path_name = output_files_path + self.name + "_" + str(state_counter) + ".kml"
-		#print("ESU: GE kml file_name : %s" % self.klm_file_path_name )
-		#init_kml_file(self.klm_file_path_name,"","")
+		if self.ge_kml_enable == 1:
+			self.klm_file_path_name = output_files_path + self.name + "_" + str(state_counter) + ".kml"
+			print("ESU: GE kml file_name : %s" % self.klm_file_path_name )
+			init_kml_file(self.klm_file_path_name,"","")
 
 		#self.log_column_numbers = 0
 		#self.log_column_names_list = []
@@ -729,7 +735,7 @@ class ESU:
 
 		#print("ESU: state_type_name: %s : state_type_param : %s" % (state_type_name,state_type_param))
 		
-		# Jos haetaan monta samanlaista tapahtumaa peräkkäin
+		# Jos haetaan monta samanlaista sarja-tapahtumaa peräkkäin
 		ana.variables["INT-SERIAL-FOUND-COUNTER"] = 0
 		if state_type_param2 == "Serial":
 
@@ -756,25 +762,28 @@ class ESU:
 							state_type_param,state_type_param2,serial_found_cnt)
 
 				if ret == "Found":
-
-					# Kaikki löydetyt talteen
 					serial_found_cnt += 1
 
 				if serial_found_cnt > -1:
 					start_time = ana.variables["INT-FOUND-TIMESTAMP"]
 
-					# Kaikki löydetyt talteen
+					# Löydetty sarja-tapahtuma talteen
 					ser_var_name = "INT-SERIAL-FOUND-TIMESTAMP-%s" % (serial_found_cnt)
 					ana.variables[ser_var_name] = start_time,serial_var
 
-				if ret == "Not found":
-					break	
+					# Jos jotain seuraavaa sarja-tapahtumaa ei löytynyt, lopetetaan haku,
+					# mutta merkitään koko haku löydetyksi (jotta BMU:ssa voidaan piirtää löydetyt tapahtumat)
+					if ret == "Not found":
+						ret = "Found"
+						break	
 
 			# Lopputekstit klm-tiedostoon
-			#finalize_kml_file(self.klm_file_path_name)
+			if self.ge_kml_enable == 1:
+				finalize_kml_file(self.klm_file_path_name)
 
 			print("## Stops serial searching, found: %s" % serial_found_cnt)
 
+			# Löydettyjen sarja-tapahtumien lukumäärä talteen
 			ana.variables["INT-SERIAL-FOUND-COUNTER"] = serial_found_cnt
 			return ret
 
@@ -785,7 +794,8 @@ class ESU:
 							state_type_param,state_type_param2,0)
 
 			# Lopputekstit klm-tiedostoon
-			#finalize_kml_file(self.klm_file_path_name)
+			if self.ge_kml_enable == 1:
+				finalize_kml_file(self.klm_file_path_name)
 
 			return ret
 		
@@ -883,7 +893,7 @@ class BMU:
 				 state_onentry_function,state_onexit_function,end_state_name,state_logfiles,
 				 state_datafiles,state_settings,state_log_time_column,state_log_variables,state_data_variables,
 				 state_position_variables,state_type,state_start_time_limit,state_stop_time_limit,
-				 gui_enable,gui_seq_draw_mode,gui,state_GUI_line_num,analyzing_mode,output_files_path):
+				 gui_enable,gui_seq_draw_mode,ge_kml_enable,gui,state_GUI_line_num,analyzing_mode,output_files_path):
 				 
 		self.analyze_file_mode=analyze_file_mode
 		print("self.analyze_file_mode = %s\n" % self.analyze_file_mode)		
@@ -938,6 +948,9 @@ class BMU:
 		self.gui_seq_draw_mode = gui_seq_draw_mode
 		print("self.gui_seq_draw_mode = %s\n" % self.gui_seq_draw_mode)
 
+		self.ge_kml_enable = ge_kml_enable
+		print("self.ge_kml_enable = %s\n" % self.ge_kml_enable)
+
 		#print("variables = %s" % variables)
 		
 		self.variables_list = ana.variables.keys()
@@ -961,7 +974,7 @@ class BMU:
 
 	def drawEventSequence(self):
 
-		print(" ******* drawEventSequence")
+		print(" ******* drawEventSequence: trace-counter: %s" % self.trace_cnt)
 
 		state_cnt = 0
 
@@ -1003,7 +1016,7 @@ class BMU:
 			# Luetaan tilan metadata: aika ja suoritusjärjestys
 			state_time,state_order = self.state_found_metadata[state_name]
 
-			print(" *** drawEventSequence: state_cnt=%s, trace_cnt=%s" % (state_cnt,self.trace_cnt))
+			#print(" *** drawEventSequence: state_cnt=%s, trace_cnt=%s" % (state_cnt,self.trace_cnt))
 
 			#print("   %4d: state: %-20s : %s" % (state_cnt,state_name,str(state_time)))
 
@@ -1023,12 +1036,8 @@ class BMU:
 				except:
 					print("BMU: ERR: Not found color for cnt: %s" % self.color_list_counter)
 
-				print(" ******* drawEventSequence MIDDLE 1: %s" % state_name)
-
 				# Jos tilassa sarjahaun tuloksia, piirretään niiden linkit tähän väliin
 				state_ser_counter = self.state_found_serial_metadata_counter[state_name]
-
-				print(" ******* drawEventSequence MIDDLE 2: %s" % state_name)
 
 				if state_ser_counter > 0:
 					print("drawEventSequence: state: %s ser_counter: %s" % (state_name,state_ser_counter))
@@ -1072,16 +1081,14 @@ class BMU:
 					self.gui.drawTraceLine(self.gui.qp,old_event_num,0,old_time,
 										new_event_num,0,new_time,color)
 
-			else:
-				self.draw_event(state_name,0,new_time,str(new_time))
+			#else:
+			self.draw_event(state_name,0,new_time,str(new_time))
 
 			old_time = new_time
 			old_event_num = new_event_num
 			state_cnt += 1
 
 		self.trace_cnt += 1
-
-		print(" ******* drawEventSequence END")
 
 	def draw_timelimits(self,state_name,timestamp_start,timestamp_stop):
 
@@ -1195,7 +1202,7 @@ class BMU:
 		
 		# Luodaan tilat ja tehdään niistä taulukko, johon viitataan tilan nimellä
 		for state in self.states:
-			self.state_array[state] = ESU(state,self.gui_enable,self.gui,self.state_GUI_line_num)
+			self.state_array[state] = ESU(state,self.gui_enable,self.gui,self.state_GUI_line_num,self.ge_kml_enable)
 			#print("BMU: ESU: %s : %s" % (state,self.state_array[state]))
 			
 		# Alkutilan nimi
@@ -1299,6 +1306,9 @@ class BMU:
 						self.state_found_serial_metadata = {}
 						self.state_found_serial_metadata_counter = {}
 
+						# Tulostetaan tämänhetkiset muuttujat ja niiden arvot
+						#self.print_variables()
+
 					# Seuraava piirtoväri listalta
 					self.color_list_counter += 1
 					if self.color_list_counter >= len(self.color_list):
@@ -1383,7 +1393,6 @@ class BMU:
 							ser_var_name = "INT-SERIAL-FOUND-TIMESTAMP-%s" % (i)
 							ser_time_found,ser_name = ana.variables[ser_var_name]
 							self.state_found_serial_metadata[self.current_state_name,i] = ser_time_found,ser_name,i
-							#self.state_found_serial_metadata_counter[self.current_state_name] = serial_found_cnt
 							time_found = ser_time_found
 
 						self.state_found_serial_metadata_counter[self.current_state_name] = serial_found_cnt
@@ -1560,6 +1569,7 @@ def analyze_logs(args,gui,source,trace_mode):
 						ana.state_stop_time_limit,
 						args.gui_enable,
 						args.gui_seq_draw_mode,
+						args.ge_kml_enable,
 						gui,
 						ana.state_GUI_line_num,
 						args.analyzing_mode,
@@ -1637,6 +1647,7 @@ def main():
 	parser.add_argument('-analyzing_mode','--analyzing_mode', dest='analyzing_mode', help='analyzing_mode')
 	parser.add_argument('-gui_enable','--gui_enable', dest='gui_enable', type=int, help='gui_enable')
 	parser.add_argument('-gui_seq_draw_mode','--gui_seq_draw_mode', dest='gui_seq_draw_mode', help='gui_seq_draw_mode')
+	parser.add_argument('-ge_kml_enable','--ge_kml_enable', dest='ge_kml_enable', type=int, help='ge_kml_enable')
 
 	args = parser.parse_args()
 
@@ -1652,7 +1663,10 @@ def main():
 	print("analyzing_mode    : %s" % args.analyzing_mode)
 	print("gui_enable        : %s" % args.gui_enable)
 	print("gui_seq_draw_mode : %s" % args.gui_seq_draw_mode)
+	print("ge_kml_enable     : %s" % args.ge_kml_enable)
 	print("\n")
+
+	#sys.exit()
 
 	config = configparser.ConfigParser()
 	config.read('LogDig.ini')
