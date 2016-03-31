@@ -964,11 +964,11 @@ class BMU:
 
 		print("")
 		
-	def draw_event(self,state_name,offset,timestamp,text):
+	def draw_event(self,state_name,offset,timestamp,text,override_mode):
 		try:
 			new_event_num = self.state_GUI_line_num[state_name]
 			#print("      ESU: GUI-line number: %s" % new_event_num)
-			self.gui.drawEvent(self.gui.qp,new_event_num,offset,timestamp,text,"circle")
+			self.gui.drawEvent(self.gui.qp,new_event_num,offset,timestamp,text,"circle",override_mode)
 		except:
 			print("BMU: ERR: Not found state: \"%s\" for GUI-line" % (state_name))
 
@@ -1003,8 +1003,8 @@ class BMU:
 			# Määritetään mitä saraketta käytetään refenenssinä
 			if state_cnt == int(self.analyzing_col_num):
 				if self.trace_cnt == 0:
-					self.gui.setReferenceTime(state_time)
-				self.gui.setTraceReferenceTime(state_time,state_cnt)
+					self.gui.setReferenceTime(state_time,state_cnt)
+				self.gui.setTraceReferenceTime(state_time)
 			state_cnt += 1
 
 		state_cnt = 0
@@ -1055,7 +1055,7 @@ class BMU:
 						event_str = ""
 						if i == 0:
 							event_str = str(new_ser_time)
-						self.draw_event(state_name,new_ser_offset,new_ser_time,event_str)
+						self.draw_event(state_name,new_ser_offset,new_ser_time,event_str,0)
 
 						self.gui.drawTraceLine(self.gui.qp,old_ser_event_num,old_ser_offset,old_ser_time,
 												new_ser_event_num,new_ser_offset,new_ser_time,color)
@@ -1075,6 +1075,7 @@ class BMU:
 					#self.gui.drawTraceLine(self.gui.qp,old_ser_event_num,old_ser_offset,old_ser_time,
 					#					new_event_num,0,new_time,color)
 					#self.draw_event(state_name,0,new_time,str(new_time))
+					#self.draw_event(state_name,new_ser_offset,new_ser_time,"",1)
 
 				# Muuten piirretään vain yksi linkki
 				else:					
@@ -1082,7 +1083,7 @@ class BMU:
 										new_event_num,0,new_time,color)
 
 			#else:
-			self.draw_event(state_name,0,new_time,str(new_time))
+			self.draw_event(state_name,0,new_time,str(new_time),0)
 
 			old_time = new_time
 			old_event_num = new_event_num

@@ -390,6 +390,8 @@ class GUI_AnalyzeArea(GUI,QWidget):
 		delta = t2 - t1
 		#print("delta=%s" % delta)
 		self.delta_secs = delta.seconds
+		if self.analyzing_mode == "COMPARE":
+			self.delta_secs = 1200
 
 		self.t1 = t1
 		self.line_y1 = 80
@@ -457,11 +459,11 @@ class GUI_AnalyzeArea(GUI,QWidget):
 		#qp.drawText( 60, 40, "Analyze name: %s,  \t  mode: %s, \t  zoom: %.2f" % (self.analyze_file,self.analyzing_mode,self.line_zoom) )
 
 		if self.analyzing_mode == "COMPARE":
-			self.delta_secs = 3000
+			#self.delta_secs = 3600
 			self.line_auto_zoom = self.calc_auto_zoom(self.delta_secs)
 
 		# Muodostetaan aika-asteikko
-		timestamp_interval_sec = 600
+		timestamp_interval_sec = 1200
 		timetamp_counter = self.delta_secs / timestamp_interval_sec
 		print("timetamp_counter = %s" % timetamp_counter)
 
@@ -556,9 +558,9 @@ class GUI_AnalyzeArea(GUI,QWidget):
 		qp.setPen(pen)
 		qp.drawText(line_x2, self.line_y1 - text_offset , text_str)
 
-	def drawEvent(self,qp,event_pos,event_offset,timestamp,text,symbol):
+	def drawEvent(self,qp,event_pos,event_offset,timestamp,text,symbol,override_mode):
 
-		if self.analyzing_mode == "COMPARE":
+		if self.analyzing_mode == "COMPARE" and override_mode == 0:
 			return
 
 		width = 6
@@ -585,13 +587,18 @@ class GUI_AnalyzeArea(GUI,QWidget):
 		#qp.drawText(x_pos + 10,y_pos + 10 , str(timestamp))
 		qp.drawText(x_pos + 10, y_pos + 10, text)
 
-	def setReferenceTime(self,ref_time):
-		self.reference_time = ref_time
+	def setReferenceTime(self,ref_time,event_line_ind):
+
+		if self.analyzing_mode == "COMPARE" and event_line_ind == 0:
+			self.reference_time = self.t1
+		else:
+			self.reference_time = ref_time
+		
 		print("  setReferenceTime: ref_time: %s \n" % (ref_time))
 
-	def setTraceReferenceTime(self,ref_time,event_line_ind):
+	def setTraceReferenceTime(self,ref_time):
 		self.reference_diff_time = ref_time - self.reference_time
-		#print("  setTraceReferenceTime: ref_time: %s, ref_diff_time: %s \n" % (ref_time,self.reference_diff_time))
+		print("  setTraceReferenceTime: ref_time: %s, ref_diff_time: %s \n" % (ref_time,self.reference_diff_time))
 
 	def drawTimeLine(self,qp,event_pos,event_offset,timestamp1,timestamp2,color):
 
@@ -623,6 +630,20 @@ class GUI_AnalyzeArea(GUI,QWidget):
 		if self.analyzing_mode == "COMPARE":
 			ts1 = timestamp1 - self.reference_diff_time
 			ts2 = timestamp2 - self.reference_diff_time
+
+			if ts2 >= self.t1:
+				delta = ts2 - self.t1
+			else:
+				delta = self.t1 - self.t1
+
+			t2_delta_secs = delta.seconds
+
+			print(" .... drawTraceLine: ts2: %s, t1: %s, delta: new: %s, old: %s" % (ts2,self.t1,t2_delta_secs,self.delta_secs))
+
+			# Kasvatetaan aikaskaalaa, jos aika isompi kuin suurin nykyinen
+			if t2_delta_secs > self.delta_secs:
+				self.delta_secs = t2_delta_secs + 100
+
 			#print(" drawTraceLine: ts1: %s, ts2: %s, ref_diff_time: %s" % (ts1,ts2,self.reference_diff_time))
 		else:
 			ts1 = timestamp1
@@ -651,9 +672,6 @@ class GUI_AnalyzeArea(GUI,QWidget):
 
 	def calcEventPos(self,event_time):
 		
-		#time_value = datetime.strptime(event_time,"%Y-%m-%d %H:%M:%S")
-		#delta = time_value - self.t1
-
 		if event_time >= self.t1:
 			delta = event_time - self.t1
 		else:
