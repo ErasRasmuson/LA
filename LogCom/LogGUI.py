@@ -638,7 +638,7 @@ class GUI_AnalyzeArea(GUI,QWidget):
 
 			t2_delta_secs = delta.seconds
 
-			print(" .... drawTraceLine: ts2: %s, t1: %s, delta: new: %s, old: %s" % (ts2,self.t1,t2_delta_secs,self.delta_secs))
+			#print(" .... drawTraceLine: ts2: %s, t1: %s, delta: new: %s, old: %s" % (ts2,self.t1,t2_delta_secs,self.delta_secs))
 
 			# Kasvatetaan aikaskaalaa, jos aika isompi kuin suurin nykyinen
 			if t2_delta_secs > self.delta_secs:

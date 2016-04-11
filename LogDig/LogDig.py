@@ -30,6 +30,73 @@ g_version = "$Id$"
 
 #******************************************************************************
 #       
+#	CLASS:	LogFilesData
+#
+#******************************************************************************
+class LogFilesData:
+
+	logfile_already_read = {}
+	logfile_lines = {}
+
+	def __init__(self):
+		print(" >>>> LogFilesData: init")
+
+	def read_logfile(self,logfile_name):
+		print(" >>>> LogFilesData: read_logfile: %s" % logfile_name)
+
+		if os.path.isfile(logfile_name):
+			
+			# Tarkistetaan onko loki jo luettu (muistiin)
+			log_already_read = 0
+			try:
+				log_already_read = self.logfile_already_read[logfile_name]
+			except:
+				log_already_read = 0
+
+			print(" >>>> LogFilesData: log_already_read = %s" % log_already_read)
+
+			if log_already_read == 0:
+
+				log_lines = []
+				f = open(logfile_name, 'r')
+				log_lines = f.readlines()
+				f.close()
+				
+				self.logfile_lines[logfile_name] = log_lines
+
+				#self.log_column_numbers = 0
+				#self.log_column_names_list = []
+				#self.line_counter = 0
+				#self.line_sel_counter = 0
+				#self.line_found_counter = 0
+				#self.error_counter = 0
+				#self.last_line = ""
+				#self.position_counter = 0
+				#self.log_line_index = 0
+
+				# Merkitään loki luetuksi (että myöhemmin ei tarvise lukea tiedostosta uudestaan)
+				self.logfile_already_read[logfile_name] = 1
+
+				return False,True
+		else:
+			print(" >>>> LogFilesData: Not found logfile: %s" % logfile_name)
+			return True,False
+
+		return False,False
+
+	def get_loglines(self,logfile_name):
+
+		log_lines = []
+		try:
+			log_lines = self.logfile_lines[logfile_name]
+		except:
+			print(" >>>> LogFilesData: ERR: Not found log lines for: %s" % logfile_name)
+
+		return log_lines
+
+
+#******************************************************************************
+#       
 #	CLASS:	ESU
 #
 #******************************************************************************
@@ -74,10 +141,14 @@ class ESU:
 	line_found_counter = 0
 	error_counter = 0
 	last_line = ""
+	logfile_already_read = {}
 
-	def __init__(self,name,gui_enable,gui,state_GUI_line_num,ge_kml_enable):
+	def __init__(self,name,logfiles_data,gui_enable,gui,state_GUI_line_num,ge_kml_enable):
 
 		self.name=name
+
+		self.logfiles_data = logfiles_data
+
 		self.gui_enable = gui_enable
 		self.gui = gui
 
@@ -482,9 +553,6 @@ class ESU:
 		#	return self.onexit(-1)
 		
 	def read_logfile(self,logfile_name,start_time,stop_time,state_type_param,state_type_param2,serial_found_cnt):
-	
-		#self.log_column_numbers = 0
-		#self.log_column_names_list = []
 		
 		last_read_variables = {}
 		self.last_found_variables = {}
@@ -493,43 +561,38 @@ class ESU:
 
 		read_log = False
 
+		# Jos ei sarja-moodi tai sarja-moodi 1. kertaa, luetaan loki
 		if state_type_param2 != "Serial":
 			read_log = True
 		elif serial_found_cnt == -1:
 			read_log = True
 
 		if read_log == True:
-			if os.path.isfile(logfile_name):
-			
-				print(" --- ESU: Read logfile: %s" % logfile_name)
 
+			# Luetaan lokitiedostosta rivit muistiin (jos ei jo luettu) 
+			err,ret = self.logfiles_data.read_logfile(logfile_name)
+			if err == True:
+				print("ESU: ERR: Not found logfile: %s" % logfile_name)
+				return self.onexit(-1)
+
+			# jos lokitiedosto luettiin muistiin
+			if ret == True:
 				self.log_column_numbers = 0
-				self.log_column_names_list = []
-
-				self.log_lines = []
-				f = open(logfile_name, 'r')
-				self.log_lines = f.readlines()
-				f.close()
-				
+				self.log_column_names_list = []				
 				self.line_counter = 0
 				self.line_sel_counter = 0
 				self.line_found_counter = 0
 				self.error_counter = 0
 				self.last_line = ""
-				
 				self.position_counter = 0
-
 				self.log_line_index = 0
-						
-			else:
-				print("ESU: ERR: Not found logfile: %s" % logfile_name)
-				return self.onexit(-1)
-
-		# Kaydaan lapi loki-tiedoston rivit
-		#for line in self.log_lines:
 
 		print(" --- ESU: log_line_index = %s" % self.log_line_index )
 
+		# Luetaan lokirivit muistista
+		self.log_lines = self.logfiles_data.get_loglines(logfile_name)
+
+		# Käydään lokirivit läpi alkaen asetusta rivistä (indeksistä)
 		while self.log_line_index < len(self.log_lines):
 
 			line = self.log_lines[self.log_line_index]
@@ -893,7 +956,8 @@ class BMU:
 				 state_onentry_function,state_onexit_function,end_state_name,state_logfiles,
 				 state_datafiles,state_settings,state_log_time_column,state_log_variables,state_data_variables,
 				 state_position_variables,state_type,state_start_time_limit,state_stop_time_limit,
-				 gui_enable,gui_seq_draw_mode,ge_kml_enable,gui,state_GUI_line_num,analyzing_mode,output_files_path):
+				 gui_enable,gui_seq_draw_mode,ge_kml_enable,gui,state_GUI_line_num,analyzing_mode,output_files_path,
+				 logfiles_data):
 				 
 		self.analyze_file_mode=analyze_file_mode
 		print("self.analyze_file_mode = %s\n" % self.analyze_file_mode)		
@@ -961,6 +1025,8 @@ class BMU:
 		print("self.analyzing_mode = %s, col =%s\n" % (self.analyzing_mode,self.analyzing_col_num ))
 
 		self.output_files_path = output_files_path
+
+		self.logfiles_data = logfiles_data
 
 		print("")
 		
@@ -1203,7 +1269,7 @@ class BMU:
 		
 		# Luodaan tilat ja tehdään niistä taulukko, johon viitataan tilan nimellä
 		for state in self.states:
-			self.state_array[state] = ESU(state,self.gui_enable,self.gui,self.state_GUI_line_num,self.ge_kml_enable)
+			self.state_array[state] = ESU(state,self.logfiles_data,self.gui_enable,self.gui,self.state_GUI_line_num,self.ge_kml_enable)
 			#print("BMU: ESU: %s : %s" % (state,self.state_array[state]))
 			
 		# Alkutilan nimi
@@ -1547,6 +1613,9 @@ def analyze_logs(args,gui,source,trace_mode):
 	global ana_new
 	#global legal_state_types
 		
+	# Alustetaan lokitiedostojen data (muistissa)
+	logfiles_data = LogFilesData()
+
 	# Luodaan tilakone
 	SM = BMU("LOGDIG",args.analyze_file_mode,
 						ana.states,
@@ -1574,7 +1643,8 @@ def analyze_logs(args,gui,source,trace_mode):
 						gui,
 						ana.state_GUI_line_num,
 						args.analyzing_mode,
-						args.output_files_path)
+						args.output_files_path,
+						logfiles_data)
 
 	print("SM name = %s" % SM.name)
 
