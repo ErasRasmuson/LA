@@ -37,11 +37,14 @@ class LogFilesData:
 
 	logfile_already_read = {}
 	logfile_lines = {}
+	logline_index = {}
+	log_column_names_list = {}
+	log_column_numbers = {}
 
 	def __init__(self):
 		print(" >>>> LogFilesData: init")
 
-	def read_logfile(self,logfile_name):
+	def read(self,logfile_name):
 		print(" >>>> LogFilesData: read_logfile: %s" % logfile_name)
 
 		if os.path.isfile(logfile_name):
@@ -62,6 +65,40 @@ class LogFilesData:
 				log_lines = f.readlines()
 				f.close()
 				
+				file_line_counter = 0
+				line_counter = 0
+				# Käydään rivit läpi
+				for line in log_lines:
+
+					file_line_counter += 1 
+
+					# Hylätään tyhjät rivit
+					if len(line) < 2:
+						continue
+				
+					# Poistetaan rivinvaihdot riviltä
+					line = line.replace("\n","")
+				
+					line_counter += 1
+					#line_list = line.split("\t")
+					line_list = line.split(",")
+					line_list_len = len(line_list)
+					
+					#print("ESU: line_list: %5d: %s" % (line_counter,line_list))
+					#print("ESU: line_list_len: %d" % (line_list_len))
+					
+					# Otsikkorivi (1. oikea rivi)
+					if line_counter == 1:
+												
+						# Otsikon sarakkeiden nimet ja lukumäärä talteen
+						self.log_column_names_list[logfile_name] = line_list
+						self.log_column_numbers[logfile_name] = line_list_len
+
+						print(" >>>> LogFilesData: columns = %s" % line_list)
+
+						# Ei käydä enempää rivejä läpi ?
+						break
+			
 				self.logfile_lines[logfile_name] = log_lines
 
 				#self.log_column_numbers = 0
@@ -72,7 +109,9 @@ class LogFilesData:
 				#self.error_counter = 0
 				#self.last_line = ""
 				#self.position_counter = 0
-				#self.log_line_index = 0
+				self.logline_index[logfile_name] = file_line_counter
+
+				print(" >>>> LogFilesData: file_line_counter = %s, line_counter = %s" % (file_line_counter,line_counter))
 
 				# Merkitään loki luetuksi (että myöhemmin ei tarvise lukea tiedostosta uudestaan)
 				self.logfile_already_read[logfile_name] = 1
@@ -84,7 +123,7 @@ class LogFilesData:
 
 		return False,False
 
-	def get_loglines(self,logfile_name):
+	def get_lines(self,logfile_name):
 
 		log_lines = []
 		try:
@@ -93,6 +132,34 @@ class LogFilesData:
 			print(" >>>> LogFilesData: ERR: Not found log lines for: %s" % logfile_name)
 
 		return log_lines
+
+	def get_line_index(self,logfile_name):
+
+		logline_index = 0
+		try:
+			logline_index = self.logline_index[logfile_name]
+		except:
+			print(" >>>> LogFilesData: ERR: Not found log line index for: %s" % logfile_name)
+
+		print(" >>>> LogFilesData: get_line_index: %s" % logline_index)
+
+		return logline_index
+
+	def get_header_data(self,logfile_name):
+
+		col_num = 0
+		col_names = []
+		try:
+			col_names = self.log_column_names_list[logfile_name]
+			col_num = self.log_column_numbers[logfile_name]
+		except:
+			print(" >>>> LogFilesData: ERR: Not found log column data for: %s" % logfile_name)
+
+		return col_names,col_num
+
+	def set_line_index(self,logfile_name,value):
+
+		self.logline_index[logfile_name] = value
 
 
 #******************************************************************************
@@ -135,7 +202,7 @@ class ESU:
 	position_lon_variable_name = ""
 	position_lat_variable_name = ""
 	log_lines = []
-	log_line_index = 0
+	log_line_index = 1
 	line_counter = 0
 	line_sel_counter = 0
 	line_found_counter = 0
@@ -147,16 +214,16 @@ class ESU:
 
 		self.name=name
 
-		self.logfiles_data = logfiles_data
+		self.logfiles = logfiles_data
 
 		self.gui_enable = gui_enable
 		self.gui = gui
 
 		self.state_GUI_line_num = state_GUI_line_num
-		print("ESU: state_GUI_line_num = %s" % self.state_GUI_line_num)
+		#print("ESU: state_GUI_line_num = %s" % self.state_GUI_line_num)
 
 		self.ge_kml_enable = ge_kml_enable
-		print("ESU: ge_kml_enable = %s" % self.ge_kml_enable)
+		#print("ESU: ge_kml_enable = %s" % self.ge_kml_enable)
 
 	#def onentry(self,):
 		# Tarviiko ?
@@ -569,34 +636,50 @@ class ESU:
 
 		if read_log == True:
 
-			# Luetaan lokitiedostosta rivit muistiin (jos ei jo luettu) 
-			err,ret = self.logfiles_data.read_logfile(logfile_name)
+			# Luetaan lokitiedostosta rivit muistiin (jos ei jo luettu)
+			# Haetaan myös lokin otsikkorivi
+			err,ret = self.logfiles.read(logfile_name)
 			if err == True:
 				print("ESU: ERR: Not found logfile: %s" % logfile_name)
 				return self.onexit(-1)
 
 			# jos lokitiedosto luettiin muistiin
 			if ret == True:
-				self.log_column_numbers = 0
-				self.log_column_names_list = []				
+				#self.log_column_numbers = 0
+				#self.log_column_names_list = []				
 				self.line_counter = 0
 				self.line_sel_counter = 0
 				self.line_found_counter = 0
 				self.error_counter = 0
 				self.last_line = ""
 				self.position_counter = 0
-				self.log_line_index = 0
+
+				#self.log_line_index = 1
+				# Haetaan lokitiedosto luvun alkurivi (indeksi)
+				self.log_line_index = self.logfiles.get_line_index(logfile_name)
+				
+		# Luetaan lokirivit muistista
+		self.log_lines = self.logfiles.get_lines(logfile_name)
 
 		print(" --- ESU: log_line_index = %s" % self.log_line_index )
 
-		# Luetaan lokirivit muistista
-		self.log_lines = self.logfiles_data.get_loglines(logfile_name)
+		# Haetaan otsikon sarakkeiden nimet ja lukumäärä
+		self.log_column_names_list,self.log_column_numbers = self.logfiles.get_header_data(logfile_name)
+		
+		# Muodostetaan muuttujat
+		for column_name in self.log_column_names_list:
 
-		# Käydään lokirivit läpi alkaen asetusta rivistä (indeksistä)
+			# Poistetaan mahdolliset spacet alusta ja lopusta
+			#column_name = column_name.lstrip().rstrip()
+			last_read_variables[column_name]=""
+
+		# Käydään lokirivit läpi alkaen tietystä rivistä (indeksistä)
 		while self.log_line_index < len(self.log_lines):
 
 			line = self.log_lines[self.log_line_index]
+
 			self.log_line_index += 1
+			self.logfiles.set_line_index(logfile_name,self.log_line_index)
 
 			# Hylätään tyhjät rivit
 			if len(line) < 2:
@@ -614,128 +697,122 @@ class ESU:
 			#print("ESU: line_list_len: %d" % (line_list_len))
 			
 			# Otsikkorivi
-			if self.line_counter == 1:
-
-				# Tätä ei välttämättä tarvita ?!
-				#if not "Counter" in line_list[0]:
-				#	print("ESU: ERR: Illegal log-file: %s" % logfile_name)
-				#	self.onexit(-1)
-				#	return self.onexit(0)
+			#if self.line_counter == 1:
 					
 				# Muodostetaan muuttujat
-				for column_name in line_list:
+			#	for column_name in line_list:
 
 					# Poistetaan mahdolliset spacet alusta ja lopusta
 					#column_name = column_name.lstrip().rstrip()
 
-					last_read_variables[column_name]=""
+			#		last_read_variables[column_name]=""
 					
 				# Otsikon sarakkeiden nimet ja lukumäärä talteen
-				self.log_column_names_list = line_list
-				self.log_column_numbers = line_list_len
+			#	self.log_column_names_list = line_list
+			#	self.log_column_numbers = line_list_len
 			
 				#print("ESU: Headerline: \n%s" % line)
 				
 			# Muuten data-rivi
-			else:
+			#else:
 			
-				#if self.line_counter > 5:
-				#	sys.exit()
+			#if self.line_counter > 5:
+			#	sys.exit()
+		
+			# Jos rivilla ei ollut sarakkeita saman verran kuin otsikossa,
+			# hylätään rivi
+			if line_list_len != self.log_column_numbers:
+				print(" --- ESU: Number of columns are illegal: %s - %s" % (line_list_len,self.log_column_numbers))
+				continue
 			
-				# Jos rivilla ei ollut sarakkeita saman verran kuin otsikossa,
-				# hylätään rivi
-				if line_list_len != self.log_column_numbers:
-					print(" --- ESU: Number of columns are illegal: %s - %s" % (line_list_len,self.log_column_numbers))
-					continue
-				
-				self.line_sel_counter += 1
-				
-				# Luetaan rivin sarakkeiden arvot luettujen muuttujiin
-				col_index = 0
-				for column_name in self.log_column_names_list:
-					var_value = line_list[col_index]
+			self.line_sel_counter += 1
+			
+			# Luetaan rivin sarakkeiden arvot luettujen muuttujiin
+			col_index = 0
+			for column_name in self.log_column_names_list:
+				var_value = line_list[col_index]
 
-					# Poistetaan mahdolliset spacet alusta ja lopusta
-					#var_value = var_value.lstrip().rstrip()
+				# Poistetaan mahdolliset spacet alusta ja lopusta
+				#var_value = var_value.lstrip().rstrip()
 
-					last_read_variables[column_name] = var_value
-					#print("ESU: %5d: Var name: %-20s value: \"%s\"" % (col_index,column_name,last_read_variables[column_name]))
-					col_index += 1
+				last_read_variables[column_name] = var_value
+				#print("ESU: %5d: Var name: %-20s value: \"%s\"" % (col_index,column_name,last_read_variables[column_name]))
+				col_index += 1
+				
+			#timestamp_str = last_read_variables["TIMESTAMP"]
+			timestamp_str = last_read_variables[self.state_log_time_column]
+			line_timestamp = datetime.strptime(timestamp_str,"%Y-%m-%d %H:%M:%S")
+			
+			#print("line_timestamp = %s, start_time = %s, stop_time = %s" % (line_timestamp,start_time,stop_time))
+
+			# Piirretään löydetty tapahtuma GUI:hin
+			#if self.gui_enable == 1:
+			#	self.draw_event(self.name,line_timestamp,"")
+
+			# Tarkistetaan aikaväli
+			if line_timestamp >= start_time:
+				if line_timestamp < stop_time:
+					self.line_sel_counter += 1
+					#print("ESU: Line %s in time-gap: %s -- %s" % (line,ana.variables["START-TIMESTAMP"],ana.variables["STOP-TIMESTAMP"]))
+					#print("ESU: Line %s in time-gap: %s -- %s" % (line,start_time,stop_time))
 					
-				#timestamp_str = last_read_variables["TIMESTAMP"]
-				timestamp_str = last_read_variables[self.state_log_time_column]
-				line_timestamp = datetime.strptime(timestamp_str,"%Y-%m-%d %H:%M:%S")
-				
-				#print("line_timestamp = %s, start_time = %s, stop_time = %s" % (line_timestamp,start_time,stop_time))
+					# Piirretään löydetty tapahtuma GUI:hin
+					#if self.gui_enable == 1:
+					#	self.draw_event(self.name,line_timestamp,"")
 
-				# Piirretään löydetty tapahtuma GUI:hin
-				#if self.gui_enable == 1:
-				#	self.draw_event(self.name,line_timestamp,"")
+					# Onko rivin muuttujien arvot samat kuin input-muuttujien arvot
+					ok_count = 0
+					var_count = 0
+					for var_name in self.state_log_variables_list:
+						var_count += 1
+						try: 
+							#print("   name = %-15s last var = %-15s var = %-15s" % (var_name,last_read_variables[var_name],self.log_variables[var_name]))
+							if last_read_variables[var_name] == self.log_variables[var_name]:
+								ok_count += 1
+						except KeyError:
+							print("ESU: ERR: Not found input-variable: %s" % (var_name))
+							return self.onexit(-1)
+							
+					#print("ok_count=%s ,var_count=%s" % (ok_count,var_count))
 
-				# Tarkistetaan aikaväli
-				if line_timestamp >= start_time:
-					if line_timestamp < stop_time:
-						self.line_sel_counter += 1
-						#print("ESU: Line %s in time-gap: %s -- %s" % (line,ana.variables["START-TIMESTAMP"],ana.variables["STOP-TIMESTAMP"]))
-						#print("ESU: Line %s in time-gap: %s -- %s" % (line,start_time,stop_time))
+					if ok_count == var_count:
+					
+						self.line_found_counter += 1
+
+						# Viimeiset löydetyt muuttujat talteen
+						for column_name in self.log_column_names_list:
+							self.last_found_variables[column_name] = last_read_variables[column_name]
+							self.last_line = line
+							self.line_found_timestamp = line_timestamp
+					
+						# Jos oli ensimmäisen tapahtuman haku
+						if state_type_param == "First":
+							print("ESU: %s: First event was found" % (self.name))
+							print("ESU: line      : \n%s" % (line))
+							
+							self.line_found_timestamp = line_timestamp
+							return self.onexit(1)
 						
-						# Piirretään löydetty tapahtuma GUI:hin
-						#if self.gui_enable == 1:
-						#	self.draw_event(self.name,line_timestamp,"")
-
-						# Onko rivin muuttujien arvot samat kuin input-muuttujien arvot
-						ok_count = 0
-						var_count = 0
-						for var_name in self.state_log_variables_list:
-							var_count += 1
-							try: 
-								#print("   name = %-15s last var = %-15s var = %-15s" % (var_name,last_read_variables[var_name],self.log_variables[var_name]))
-								if last_read_variables[var_name] == self.log_variables[var_name]:
-									ok_count += 1
-							except KeyError:
-								print("ESU: ERR: Not found input-variable: %s" % (var_name))
-								return self.onexit(-1)
-								
-						#print("ok_count=%s ,var_count=%s" % (ok_count,var_count))
-
-						if ok_count == var_count:
-						
-							self.line_found_counter += 1
-
-							# Viimeiset löydetyt muuttujat talteen
-							for column_name in self.log_column_names_list:
-								self.last_found_variables[column_name] = last_read_variables[column_name]
-								self.last_line = line
-								self.line_found_timestamp = line_timestamp
-						
-							# Jos oli ensimmäisen tapahtuman haku
-							if state_type_param == "First":
-								print("ESU: %s: First event was found" % (self.name))
-								print("ESU: line      : \n%s" % (line))
-								
-								self.line_found_timestamp = line_timestamp
+						# Jos paikkatietoalueelta lähdön etsintä
+						elif state_type_param == "Leaving":
+							ret = self.check_position_event(state_type_param)
+							if ret == True:
 								return self.onexit(1)
 							
-							# Jos paikkatietoalueelta lähdön etsintä
-							elif state_type_param == "Leaving":
-								ret = self.check_position_event(state_type_param)
-								if ret == True:
-									return self.onexit(1)
-								
-							# Jos paikkatietoalueelle tulon etsintä
-							elif state_type_param == "Entering":
-								ret = self.check_position_event(state_type_param)
-								if ret == True:
-									return self.onexit(1)
+						# Jos paikkatietoalueelle tulon etsintä
+						elif state_type_param == "Entering":
+							ret = self.check_position_event(state_type_param)
+							if ret == True:
+								return self.onexit(1)
 
-						# Pitää myös "poistaa" käytetty viesti, että sitä ei oteta uudestaan !!??
+					# Pitää myös "poistaa" käytetty viesti, että sitä ei oteta uudestaan !!??
 
-					else:
-						# Ei löytynyt aikaväliltä, lopetetaan haku. Ei lueta turhaan loppua !
-						print(" *** ESU: Stops searching: stop time is exceeded: %s" % line_timestamp)
-						print(" *** ESU: Last line: %s" % line)
-						#return self.onexit(0)
-						break
+				else:
+					# Ei löytynyt aikaväliltä, lopetetaan haku. Ei lueta turhaan loppua !
+					print(" *** ESU: Stops searching: stop time is exceeded: %s" % line_timestamp)
+					print(" *** ESU: Last line: %s" % line)
+					#return self.onexit(0)
+					break
 
 		print("ESU: line_counter       = %d" % self.line_counter)
 		print("ESU: line_found_counter = %d" % self.line_found_counter)
@@ -960,60 +1037,60 @@ class BMU:
 				 logfiles_data):
 				 
 		self.analyze_file_mode=analyze_file_mode
-		print("self.analyze_file_mode = %s\n" % self.analyze_file_mode)		
+		#print("self.analyze_file_mode = %s\n" % self.analyze_file_mode)		
 		self.name=name
-		print("self.name = %s\n" % self.name)
+		#print("self.name = %s\n" % self.name)
 		self.states=states
-		print("self.states = %s\n" % self.states)
+		#print("self.states = %s\n" % self.states)
 		self.state_order=state_order
-		print("self.state_order = %s\n" % self.state_order)
+		#print("self.state_order = %s\n" % self.state_order)
 		self.transition_names=transition_names
-		print("self.transition_names = %s\n" % self.transition_names)
+		#print("self.transition_names = %s\n" % self.transition_names)
 		self.start_state_name=start_state_name
-		print("self.start_state_name = %s\n" % self.start_state_name)
+		#print("self.start_state_name = %s\n" % self.start_state_name)
 		self.transition=transition
-		print("self.transition = %s\n" % self.transition)
+		#print("self.transition = %s\n" % self.transition)
 		self.transition_function=transition_function
-		print("self.transition_function = %s\n" % self.transition_function)
+		#print("self.transition_function = %s\n" % self.transition_function)
 		self.state_onentry_function=state_onentry_function
-		print("self.state_onentry_function = %s\n" % self.state_onentry_function)
+		#print("self.state_onentry_function = %s\n" % self.state_onentry_function)
 		self.state_onexit_function=state_onexit_function
-		print("self.state_onexit_function = %s\n" % self.state_onexit_function)
+		#print("self.state_onexit_function = %s\n" % self.state_onexit_function)
 		self.end_state_name=end_state_name
-		print("self.end_state_name = %s\n" % self.end_state_name)
+		#print("self.end_state_name = %s\n" % self.end_state_name)
 		self.state_logfiles=state_logfiles
-		print("self.state_logfiles = %s\n" % self.state_logfiles)
+		#print("self.state_logfiles = %s\n" % self.state_logfiles)
 		self.state_datafiles=state_datafiles
-		print("self.state_datafiles = %s\n" % self.state_datafiles)
+		#print("self.state_datafiles = %s\n" % self.state_datafiles)
 		self.state_settings=state_settings
-		print("self.state_settings = %s\n" % self.state_settings)
+		#print("self.state_settings = %s\n" % self.state_settings)
 		self.state_log_time_column=state_log_time_column
-		print("self.state_log_time_column = %s\n" % self.state_log_time_column)
+		#print("self.state_log_time_column = %s\n" % self.state_log_time_column)
 		self.state_log_variables=state_log_variables
-		print("self.state_log_variables = %s\n" % self.state_log_variables)
+		#print("self.state_log_variables = %s\n" % self.state_log_variables)
 		self.state_data_variables=state_data_variables
-		print("self.state_data_variables = %s\n" % self.state_data_variables)
+		#print("self.state_data_variables = %s\n" % self.state_data_variables)
 		self.state_position_variables=state_position_variables
-		print("self.state_position_variables = %s\n" % self.state_position_variables)
+		#print("self.state_position_variables = %s\n" % self.state_position_variables)
 		self.state_type=state_type
-		print("self.state_type = %s\n" % self.state_type)
+		#print("self.state_type = %s\n" % self.state_type)
 		self.state_start_time_limit=state_start_time_limit
-		print("self.state_start_time_limit = %s\n" % self.state_start_time_limit)
+		#print("self.state_start_time_limit = %s\n" % self.state_start_time_limit)
 		self.state_stop_time_limit=state_stop_time_limit
-		print("self.state_stop_time_limit = %s\n" % self.state_stop_time_limit)
+		#print("self.state_stop_time_limit = %s\n" % self.state_stop_time_limit)
 		
 		self.gui_enable = gui_enable
-		print("self.gui_enable = %s\n" % self.gui_enable)
+		#print("self.gui_enable = %s\n" % self.gui_enable)
 		self.gui = gui		
 
 		self.state_GUI_line_num = state_GUI_line_num
-		print("self.state_GUI_line_num = %s\n" % self.state_GUI_line_num)
+		#print("self.state_GUI_line_num = %s\n" % self.state_GUI_line_num)
 
 		self.gui_seq_draw_mode = gui_seq_draw_mode
-		print("self.gui_seq_draw_mode = %s\n" % self.gui_seq_draw_mode)
+		#print("self.gui_seq_draw_mode = %s\n" % self.gui_seq_draw_mode)
 
 		self.ge_kml_enable = ge_kml_enable
-		print("self.ge_kml_enable = %s\n" % self.ge_kml_enable)
+		#print("self.ge_kml_enable = %s\n" % self.ge_kml_enable)
 
 		#print("variables = %s" % variables)
 		
