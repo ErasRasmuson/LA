@@ -38,13 +38,14 @@ class LogFilesData:
 	logfile_already_read = {}
 	logfile_lines = {}
 	logline_index = {}
+	logline_times = {}
 	log_column_names_list = {}
 	log_column_numbers = {}
 
 	def __init__(self):
 		print(" >>>> LogFilesData: init")
 
-	def read(self,logfile_name):
+	def read(self,logfile_name,time_column):
 		print(" >>>> LogFilesData: read_logfile: %s" % logfile_name)
 
 		if os.path.isfile(logfile_name):
@@ -58,6 +59,8 @@ class LogFilesData:
 
 			print(" >>>> LogFilesData: log_already_read = %s" % log_already_read)
 
+			time_column_index = 0
+
 			if log_already_read == 0:
 
 				log_lines = []
@@ -66,6 +69,7 @@ class LogFilesData:
 				f.close()
 				
 				file_line_counter = 0
+				file_line_first_index = -1
 				line_counter = 0
 				# Käydään rivit läpi
 				for line in log_lines:
@@ -93,23 +97,39 @@ class LogFilesData:
 						# Otsikon sarakkeiden nimet ja lukumäärä talteen
 						self.log_column_names_list[logfile_name] = line_list
 						self.log_column_numbers[logfile_name] = line_list_len
+						#print(" >>>> LogFilesData: columns = %s" % line_list)
 
-						print(" >>>> LogFilesData: columns = %s" % line_list)
+						# Aika-sarake talteen
+						time_column_index = line_list.index(time_column)
+						print(" >>>> LogFilesData: time column: %s index = %s" % (time_column,time_column_index))
 
 						# Ei käydä enempää rivejä läpi ?
-						break
+						#break
 			
+					# Muut rivit, haetaan aikaleimat riveille, jotta "takaisinpäin hakeminen"
+					# on myöhemmin helppoa ja nopeaa.
+					else:
+
+						if file_line_first_index == -1:
+							file_line_first_index = file_line_counter
+
+						timestamp_str = line_list[time_column_index]
+						line_timestamp = datetime.strptime(timestamp_str,"%Y-%m-%d %H:%M:%S")
+
+						# Otetaan rivien aikaleimat talteen. Vai pitäisikö käyttää alkup. tiedoston taulukkoa ?
+						self.logline_times[logfile_name,file_line_counter] = line_timestamp
+
+						#print(" >>>> cnt = %s, time = %s" % (file_line_counter,line_timestamp))
+
 				self.logfile_lines[logfile_name] = log_lines
 
-				#self.log_column_numbers = 0
-				#self.log_column_names_list = []
 				#self.line_counter = 0
 				#self.line_sel_counter = 0
 				#self.line_found_counter = 0
 				#self.error_counter = 0
 				#self.last_line = ""
 				#self.position_counter = 0
-				self.logline_index[logfile_name] = file_line_counter
+				self.logline_index[logfile_name] = file_line_first_index
 
 				print(" >>>> LogFilesData: file_line_counter = %s, line_counter = %s" % (file_line_counter,line_counter))
 
@@ -144,6 +164,39 @@ class LogFilesData:
 		print(" >>>> LogFilesData: get_line_index: %s" % logline_index)
 
 		return logline_index
+
+	def search_line_index(self,logfile_name,start_time):
+
+		# EI TOIMI OIKEIN ??!!
+
+		print(" >>>> LogFilesData: search_line_index: start_time=%s" % start_time)
+
+		current_line_index = self.logline_index[logfile_name]
+		current_line_timestamp = self.logline_times[logfile_name,current_line_index]
+
+		print(" >>>> LogFilesData: search_line_index:   cur_time=%s, cur_ind=%s" % (current_line_timestamp,current_line_index))
+
+		# Jos lokin viimeisen luetun rivin aikaleima on suurempi, kuin uuden haun alku-aikaleima
+		if current_line_timestamp > start_time:
+
+			print(" >>>> LogFilesData: search_line_index: cur_time > start_time")
+
+			# Haetaan taaksepäin uusi rivin indeksi, jonka aikaleima pienempi, kuin uuden haun alkuaika
+			search_count = 0
+			for index in range(current_line_index,1,-1):
+
+				#print(" >>> index = %s" % index)
+				search_count += 1
+				new_line_timestamp = self.logline_times[logfile_name,index]
+				if new_line_timestamp <= start_time:
+
+					print(" >>>> LogFilesData: search_line_index: cur_ind=%s, cur_time=%s, new_ind=%s, new_time=%s, search_count=%s" % 
+							(current_line_index,current_line_timestamp,index,new_line_timestamp,search_count))
+
+					return index
+
+		return current_line_index
+
 
 	def get_header_data(self,logfile_name):
 
@@ -638,7 +691,7 @@ class ESU:
 
 			# Luetaan lokitiedostosta rivit muistiin (jos ei jo luettu)
 			# Haetaan myös lokin otsikkorivi
-			err,ret = self.logfiles.read(logfile_name)
+			err,ret = self.logfiles.read(logfile_name,self.state_log_time_column)
 			if err == True:
 				print("ESU: ERR: Not found logfile: %s" % logfile_name)
 				return self.onexit(-1)
@@ -658,6 +711,10 @@ class ESU:
 				# Haetaan lokitiedosto luvun alkurivi (indeksi)
 				self.log_line_index = self.logfiles.get_line_index(logfile_name)
 				
+		# Haetaan alkuajan lokirivin indeksi (nopeuttaa hakemista, jos ei tarvii aina lukea kaikkia rivejä lokin alusta)
+		# TÄMÄ EI TOIMI OIKEIN !!!
+		#self.log_line_index = self.logfiles.search_line_index(logfile_name,start_time)
+
 		# Luetaan lokirivit muistista
 		self.log_lines = self.logfiles.get_lines(logfile_name)
 
@@ -674,6 +731,7 @@ class ESU:
 			last_read_variables[column_name]=""
 
 		# Käydään lokirivit läpi alkaen tietystä rivistä (indeksistä)
+		# Ei saa sisältää otsikko riviä !
 		while self.log_line_index < len(self.log_lines):
 
 			line = self.log_lines[self.log_line_index]
