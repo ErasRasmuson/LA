@@ -27,6 +27,7 @@ from LogGUI import *
 from MapGEkml import *
 
 g_version = "$Id$"
+analyze_run_counter = 0
 
 #******************************************************************************
 #       
@@ -41,9 +42,11 @@ class LogFilesData:
 	logline_times = {}
 	log_column_names_list = {}
 	log_column_numbers = {}
+	log_data_line_counter = {}
 
 	def __init__(self):
 		print(" >>>> LogFilesData: init")
+		self.logfile_already_read = {}
 
 	def read(self,logfile_name,time_column):
 		print(" >>>> LogFilesData: read_logfile: %s" % logfile_name)
@@ -70,8 +73,8 @@ class LogFilesData:
 				f.close()
 				
 				file_line_counter = 0
-				#file_line_first_index = -1
 				line_counter = 0
+				self.log_data_line_counter[logfile_name] = 0
 				# Käydään rivit läpi
 				for line in log_lines:
 
@@ -111,29 +114,18 @@ class LogFilesData:
 					# on myöhemmin helppoa ja nopeaa.
 					else:
 
-						#if file_line_first_index == -1:
-						#	file_line_first_index = file_line_counter
-
 						timestamp_str = line_list[time_column_index]
 						line_timestamp = datetime.strptime(timestamp_str,"%Y-%m-%d %H:%M:%S")
 
 						# Otetaan rivien aikaleimat talteen. Vai pitäisikö käyttää alkup. tiedoston logfile_lines-taulukkoa ?
-						self.logline_times[logfile_name,file_line_counter] = line_timestamp
-
-						#print(" >>>> cnt = %s, time = %s" % (file_line_counter,line_timestamp))
+						self.logline_times[logfile_name,self.log_data_line_counter[logfile_name]] = line_timestamp
+						#print(" >>>> cnt = %s, time = %s" % (self.log_data_line_counter[logfile_name],line_timestamp))
+						self.log_data_line_counter[logfile_name] += 1
 
 						self.logfile_lines[logfile_name].append(line_list)
 
 				#self.logfile_lines[logfile_name] = log_lines
 
-				#self.line_counter = 0
-				#self.line_sel_counter = 0
-				#self.line_found_counter = 0
-				#self.error_counter = 0
-				#self.last_line = ""
-				#self.position_counter = 0
-
-				#self.logline_index[logfile_name] = file_line_first_index
 				self.logline_index[logfile_name] = 0
 
 				print(" >>>> LogFilesData: file_line_counter = %s, line_counter = %s" % (file_line_counter,line_counter))
@@ -172,19 +164,33 @@ class LogFilesData:
 
 	def search_line_index(self,logfile_name,start_time):
 
-		# EI TOIMI OIKEIN ??!!
-
 		print(" >>>> LogFilesData: search_line_index: start_time=%s" % start_time)
 
-		current_line_index = self.logline_index[logfile_name]
-		current_line_timestamp = self.logline_times[logfile_name,current_line_index]
+		# Käytetään viimeistä (ei seuraavaa) luetun rivin indeksiä uudestaan 
+		current_line_index = self.logline_index[logfile_name] - 1
+		if current_line_index < 0:
+			current_line_index = 0
 
-		print(" >>>> LogFilesData: search_line_index:   cur_time=%s, cur_ind=%s" % (current_line_timestamp,current_line_index))
+		log_data_size = self.log_data_line_counter[logfile_name]
+
+		#print(" >>>> LogFilesData: cur index: %s, max index: %s" % (current_line_index,log_data_size))
+
+		if current_line_index > log_data_size - 1:
+			print(" >>>> LogFilesData: ERR: current_line_index: %s > %s" % (current_line_index,log_data_size-1))
+			return 0
+
+		try:
+			current_line_timestamp = self.logline_times[logfile_name,current_line_index]
+		except:
+			print(" >>>> LogFilesData: ERR: Not found timestamp for: %s and index: %s" % (logfile_name,current_line_index))
+			return 0
+
+		#print(" >>>> LogFilesData: search_line_index:   cur_time=%s, cur_ind=%s" % (current_line_timestamp,current_line_index))
 
 		# Jos lokin viimeisen luetun rivin aikaleima on suurempi, kuin uuden haun alku-aikaleima
 		if current_line_timestamp > start_time:
 
-			print(" >>>> LogFilesData: search_line_index: cur_time > start_time")
+			#print(" >>>> LogFilesData: search_line_index: cur_time > start_time")
 
 			# Haetaan taaksepäin uusi rivin indeksi, jonka aikaleima pienempi, kuin uuden haun alkuaika
 			search_count = 0
@@ -260,13 +266,14 @@ class ESU:
 	position_lon_variable_name = ""
 	position_lat_variable_name = ""
 	log_lines = []
-	log_line_index = 1
+	#log_line_index = 1
 	line_counter = 0
 	line_sel_counter = 0
 	line_found_counter = 0
 	error_counter = 0
 	last_line = ""
 	logfile_already_read = {}
+	esu_run_counter = 0
 
 	def __init__(self,name,logfiles_data,gui_enable,gui,state_GUI_line_num,ge_kml_enable):
 
@@ -684,9 +691,8 @@ class ESU:
 		
 		#print("state_type_param: %s, state_type_param2: %s, serial_found_cnt: %s" % (state_type_param,state_type_param2,serial_found_cnt))
 
-		read_log = False
-
 		# Jos ei sarja-moodi tai sarja-moodi 1. kertaa, luetaan loki
+		read_log = False
 		if state_type_param2 != "Serial":
 			read_log = True
 		elif serial_found_cnt == -1:
@@ -702,29 +708,28 @@ class ESU:
 				return self.onexit(-1)
 
 			# jos lokitiedosto luettiin muistiin
-			if ret == True:
-				#self.log_column_numbers = 0
-				#self.log_column_names_list = []				
+			if ret == True:		
 				self.line_counter = 0
 				self.line_sel_counter = 0
 				self.line_found_counter = 0
 				self.error_counter = 0
-				#self.last_line = ""
 				self.last_line = []
 				self.position_counter = 0
 
-				#self.log_line_index = 1
 				# Haetaan lokitiedosto luvun alkurivi (indeksi)
-				self.log_line_index = self.logfiles.get_line_index(logfile_name)
+				#self.log_line_index = self.logfiles.get_line_index(logfile_name)
 				
-			# Haetaan alkuajan lokirivin indeksi (nopeuttaa hakemista, jos ei tarvii aina lukea kaikkia rivejä lokin alusta)
-			# TÄMÄ EI TOIMI OIKEIN !!!?
-			#self.log_line_index = self.logfiles.search_line_index(logfile_name,start_time)
+		# Haetaan lokitiedosto luvun alkurivi (indeksi)
+		#log_line_index = self.logfiles.get_line_index(logfile_name)
+
+		# Haetaan alkuajan lokirivin indeksi (nopeuttaa hakemista, jos ei tarvii aina lukea kaikkia rivejä lokin alusta)
+		# TÄMÄ EI TOIMI OIKEIN !!!?
+		log_line_index = self.logfiles.search_line_index(logfile_name,start_time)
 
 		# Luetaan lokirivit muistista
 		self.log_lines = self.logfiles.get_lines(logfile_name)
 
-		print(" --- ESU: log_line_index = %s" % self.log_line_index )
+		print(" --- ESU: log_line_index = %s" % log_line_index )
 
 		# Haetaan otsikon sarakkeiden nimet ja lukumäärä
 		self.log_column_names_list,self.log_column_numbers = self.logfiles.get_header_data(logfile_name)
@@ -740,54 +745,21 @@ class ESU:
 		# Ei saa sisältää otsikko riviä !
 		lines_len = len(self.log_lines)
 		print(" === lines_len = %s" % lines_len)
-		while self.log_line_index < lines_len:
+		while log_line_index < lines_len:
 
 			#line = self.log_lines[self.log_line_index]
-			line_list = self.log_lines[self.log_line_index]
+			line_list = self.log_lines[log_line_index]
+			line_list_len = len(line_list)
 
 			#print(" === line_list = %s" % line_list)
 
-			self.log_line_index += 1
-			self.logfiles.set_line_index(logfile_name,self.log_line_index)
-
-			# Hylätään tyhjät rivit
-			#if len(line) < 2:
-			#	continue
-		
-			# Poistetaan rivinvaihdot riviltä
-			#line = line.replace("\n","")
+			log_line_index += 1
+			self.logfiles.set_line_index(logfile_name,log_line_index)
 		
 			self.line_counter += 1
-
-			#line_list = line.split("\t")
-			#line_list = line.split(",")
-			line_list_len = len(line_list)
 			
 			#print("ESU: line_list: %5d: %s" % (self.line_counter,line_list))
 			#print("ESU: line_list_len: %d" % (line_list_len))
-			
-			# Otsikkorivi
-			#if self.line_counter == 1:
-					
-				# Muodostetaan muuttujat
-			#	for column_name in line_list:
-
-					# Poistetaan mahdolliset spacet alusta ja lopusta
-					#column_name = column_name.lstrip().rstrip()
-
-			#		last_read_variables[column_name]=""
-					
-				# Otsikon sarakkeiden nimet ja lukumäärä talteen
-			#	self.log_column_names_list = line_list
-			#	self.log_column_numbers = line_list_len
-			
-				#print("ESU: Headerline: \n%s" % line)
-				
-			# Muuten data-rivi
-			#else:
-			
-			#if self.line_counter > 5:
-			#	sys.exit()
 		
 			# Jos rivilla ei ollut sarakkeita saman verran kuin otsikossa,
 			# hylätään rivi
@@ -808,8 +780,7 @@ class ESU:
 				last_read_variables[column_name] = var_value
 				#print("ESU: %5d: Var name: %-20s value: \"%s\"" % (col_index,column_name,last_read_variables[column_name]))
 				col_index += 1
-				
-			#timestamp_str = last_read_variables["TIMESTAMP"]
+
 			timestamp_str = last_read_variables[self.state_log_time_column]
 			line_timestamp = datetime.strptime(timestamp_str,"%Y-%m-%d %H:%M:%S")
 			
@@ -904,9 +875,12 @@ class ESU:
 	def run(self,state_counter,start_time,stop_time,logfile_name,datafile_name,state_log_time_column,
 			state_log_variables,state_data_variables,state_position_variables,state_type,output_files_path):
 
+
+		self.esu_run_counter += 1
+
 		print("")
 		print("----------------------------------------------------------------")
-		print("ESU: %s is running: start_time = %s, stop_time = %s" % (self.name,start_time,stop_time))
+		print("ESU: %s is running: start_time = %s, stop_time = %s, run_counter = %s" % (self.name,start_time,stop_time,self.esu_run_counter ))
 		print("ESU: read orig logfile_name  : %s" % logfile_name)
 		print("ESU: read orig datafile_name : %s" % datafile_name)
 		print("ESU: Search type: %s" % state_type)
@@ -1091,6 +1065,7 @@ class BMU:
 	#state_found_list = []
 	state_event_num = {}
 	event_last_stop_timestamp = {}
+	bmu_run_counter = 0
 
 	color_list_counter = 0
 	color_list = [QColor(255,0,0,127),
@@ -1415,6 +1390,9 @@ class BMU:
 			
 	def run(self):
 		
+		self.bmu_run_counter += 1
+		print("bmu_run_counter = %s" % self.bmu_run_counter)
+
 		# Luodaan tilat ja tehdään niistä taulukko, johon viitataan tilan nimellä
 		for state in self.states:
 			self.state_array[state] = ESU(state,self.logfiles_data,self.gui_enable,self.gui,self.state_GUI_line_num,self.ge_kml_enable)
@@ -1759,8 +1737,14 @@ def analyze_logs(args,gui,source,trace_mode):
 
 	global ana
 	global ana_new
+	global analyze_run_counter
 	#global legal_state_types
-		
+
+	analyze_run_counter += 1
+	print("\n ~~~ analyze_run_counter = %s\n" % analyze_run_counter)
+
+	start_time = time.time()
+
 	# Alustetaan lokitiedostojen data (muistissa)
 	logfiles_data = LogFilesData()
 
@@ -1798,6 +1782,9 @@ def analyze_logs(args,gui,source,trace_mode):
 
 	# Käynnistetään tilakone ja ajetaan analysoinnit
 	SM.run()	
+
+	print("\n ~~~ analyze_run_counter = %s\n" % analyze_run_counter)
+	print("Total execution time: %.3f seconds\n" % (time.time() - start_time))
 
 #******************************************************************************
 #
