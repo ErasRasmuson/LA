@@ -63,13 +63,14 @@ class LogFilesData:
 
 			if log_already_read == 0:
 
+				self.logfile_lines[logfile_name] = []
 				log_lines = []
 				f = open(logfile_name, 'r')
 				log_lines = f.readlines()
 				f.close()
 				
 				file_line_counter = 0
-				file_line_first_index = -1
+				#file_line_first_index = -1
 				line_counter = 0
 				# Käydään rivit läpi
 				for line in log_lines:
@@ -110,18 +111,20 @@ class LogFilesData:
 					# on myöhemmin helppoa ja nopeaa.
 					else:
 
-						if file_line_first_index == -1:
-							file_line_first_index = file_line_counter
+						#if file_line_first_index == -1:
+						#	file_line_first_index = file_line_counter
 
 						timestamp_str = line_list[time_column_index]
 						line_timestamp = datetime.strptime(timestamp_str,"%Y-%m-%d %H:%M:%S")
 
-						# Otetaan rivien aikaleimat talteen. Vai pitäisikö käyttää alkup. tiedoston taulukkoa ?
+						# Otetaan rivien aikaleimat talteen. Vai pitäisikö käyttää alkup. tiedoston logfile_lines-taulukkoa ?
 						self.logline_times[logfile_name,file_line_counter] = line_timestamp
 
 						#print(" >>>> cnt = %s, time = %s" % (file_line_counter,line_timestamp))
 
-				self.logfile_lines[logfile_name] = log_lines
+						self.logfile_lines[logfile_name].append(line_list)
+
+				#self.logfile_lines[logfile_name] = log_lines
 
 				#self.line_counter = 0
 				#self.line_sel_counter = 0
@@ -129,7 +132,9 @@ class LogFilesData:
 				#self.error_counter = 0
 				#self.last_line = ""
 				#self.position_counter = 0
-				self.logline_index[logfile_name] = file_line_first_index
+
+				#self.logline_index[logfile_name] = file_line_first_index
+				self.logline_index[logfile_name] = 0
 
 				print(" >>>> LogFilesData: file_line_counter = %s, line_counter = %s" % (file_line_counter,line_counter))
 
@@ -183,7 +188,7 @@ class LogFilesData:
 
 			# Haetaan taaksepäin uusi rivin indeksi, jonka aikaleima pienempi, kuin uuden haun alkuaika
 			search_count = 0
-			for index in range(current_line_index,1,-1):
+			for index in range(current_line_index,0,-1):
 
 				#print(" >>> index = %s" % index)
 				search_count += 1
@@ -704,16 +709,17 @@ class ESU:
 				self.line_sel_counter = 0
 				self.line_found_counter = 0
 				self.error_counter = 0
-				self.last_line = ""
+				#self.last_line = ""
+				self.last_line = []
 				self.position_counter = 0
 
 				#self.log_line_index = 1
 				# Haetaan lokitiedosto luvun alkurivi (indeksi)
 				self.log_line_index = self.logfiles.get_line_index(logfile_name)
 				
-		# Haetaan alkuajan lokirivin indeksi (nopeuttaa hakemista, jos ei tarvii aina lukea kaikkia rivejä lokin alusta)
-		# TÄMÄ EI TOIMI OIKEIN !!!
-		#self.log_line_index = self.logfiles.search_line_index(logfile_name,start_time)
+			# Haetaan alkuajan lokirivin indeksi (nopeuttaa hakemista, jos ei tarvii aina lukea kaikkia rivejä lokin alusta)
+			# TÄMÄ EI TOIMI OIKEIN !!!?
+			#self.log_line_index = self.logfiles.search_line_index(logfile_name,start_time)
 
 		# Luetaan lokirivit muistista
 		self.log_lines = self.logfiles.get_lines(logfile_name)
@@ -732,23 +738,29 @@ class ESU:
 
 		# Käydään lokirivit läpi alkaen tietystä rivistä (indeksistä)
 		# Ei saa sisältää otsikko riviä !
-		while self.log_line_index < len(self.log_lines):
+		lines_len = len(self.log_lines)
+		print(" === lines_len = %s" % lines_len)
+		while self.log_line_index < lines_len:
 
-			line = self.log_lines[self.log_line_index]
+			#line = self.log_lines[self.log_line_index]
+			line_list = self.log_lines[self.log_line_index]
+
+			#print(" === line_list = %s" % line_list)
 
 			self.log_line_index += 1
 			self.logfiles.set_line_index(logfile_name,self.log_line_index)
 
 			# Hylätään tyhjät rivit
-			if len(line) < 2:
-				continue
+			#if len(line) < 2:
+			#	continue
 		
 			# Poistetaan rivinvaihdot riviltä
-			line = line.replace("\n","")
+			#line = line.replace("\n","")
 		
 			self.line_counter += 1
+
 			#line_list = line.split("\t")
-			line_list = line.split(",")
+			#line_list = line.split(",")
 			line_list_len = len(line_list)
 			
 			#print("ESU: line_list: %5d: %s" % (self.line_counter,line_list))
@@ -840,13 +852,14 @@ class ESU:
 						# Viimeiset löydetyt muuttujat talteen
 						for column_name in self.log_column_names_list:
 							self.last_found_variables[column_name] = last_read_variables[column_name]
-							self.last_line = line
+							#self.last_line = line
+							self.last_line = line_list
 							self.line_found_timestamp = line_timestamp
 					
 						# Jos oli ensimmäisen tapahtuman haku
 						if state_type_param == "First":
 							print("ESU: %s: First event was found" % (self.name))
-							print("ESU: line      : \n%s" % (line))
+							print("ESU: line      : \n%s" % (line_list))
 							
 							self.line_found_timestamp = line_timestamp
 							return self.onexit(1)
@@ -868,7 +881,7 @@ class ESU:
 				else:
 					# Ei löytynyt aikaväliltä, lopetetaan haku. Ei lueta turhaan loppua !
 					print(" *** ESU: Stops searching: stop time is exceeded: %s" % line_timestamp)
-					print(" *** ESU: Last line: %s" % line)
+					print(" *** ESU: Last line: %s" % line_list)
 					#return self.onexit(0)
 					break
 
