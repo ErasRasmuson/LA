@@ -45,8 +45,8 @@ python %SCRIPT_PATH%LogPrep.py ^
 					-column_oper "<MSG-TIMESTAMP>=ccs_time(<CCS-DAY>,<CCS-TIME>,%FILE_SAVE_DATE%)" ^
 					-column_oper "<BUS-NUMBER>=ccs_busnum(<BUS-NUMBER>)"
 					
-SET INPUT_FILES=Apo_304.txt,Apo_364.txt,Apo_355.txt,Apo_158.txt
-REM SET INPUT_FILES=Apo_*.txt
+REM SET INPUT_FILES=Apo_304.txt,Apo_364.txt,Apo_355.txt,Apo_158.txt
+SET INPUT_FILES=Apo_*.txt
 
 python %SCRIPT_PATH%LogPrep.py ^
 					-input_path %INPUT_PATH%save_%DIR_SAVE_DATE%\ ^

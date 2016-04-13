@@ -109,6 +109,24 @@ def set_variable(var_name,var_value):
 	except KeyError:
 		print("set_variable: ERR: Setting variable: %s = \"%s\"" % (var_name,var_value))
 
+def get_variable_str_value(var_name):
+
+	try:
+		print("  Get variable: \"%s\"" % (var_name))
+		var_value = variables[var_name]
+		return var_value
+	except KeyError:
+		print("get_variable_str_value: ERR: Getting variable: \"%s\"" % (var_name))
+
+def get_variable_int_value(var_name,base):
+
+	try:
+		print("  Get variable: \"%s\", base = %s" % (var_name,base))
+		var_value = int(variables[var_name],base)
+		return var_value
+	except KeyError:
+		print("get_variable_int_value: ERR: Getting variable: \"%s\", base = %s" % (var_name,base))
+
 def compare_variable(result_var_name,var1_name,comp_oper,var2_name):
 
 	print("  Compare variable: %s %s %s" % (var1_name,comp_oper,var2_name))
@@ -144,6 +162,12 @@ def set_datetime_variable(timestamp_var_name,date_var_name,time_var_name):
 		variables[timestamp_var_name] = timestamp_value
 	except KeyError:
 		print("set_datetime_variable: ERR: Setting time variable: %s" % (timestamp_var_name))
+
+def get_time_variable_value(timestamp_var_name):
+
+	print("get_time_variable_value: timestamp_var_name: %s" % timestamp_var_name)
+	timestamp_value = datetime.datetime.strptime(variables[timestamp_var_name][:19],"%Y-%m-%d %H:%M:%S")
+	return timestamp_value
 
 def calc_time_diff(timediff_var_name,timediff_sec_var_name,time1_var_name,time2_var_name):
 

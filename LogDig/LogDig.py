@@ -206,6 +206,8 @@ class LogFilesData:
 
 					return index
 
+		print(" >>>> LogFilesData: search_line_index: cur_ind=%s, cur_time=%s" % 
+							(current_line_index,current_line_timestamp))
 		return current_line_index
 
 
@@ -640,8 +642,10 @@ class ESU:
 				
 				#print("%5d: %s" % (data_line_counter,line))
 				
-				#line_list = line.split("\t")
-				line_list = line.split(",")
+				if "\t" in line:
+					line_list = line.split("\t")
+				elif "," in line:
+					line_list = line.split(",")
 				line_list_len = len(line_list)
 				#print("ESU: line_list: %5d: %s" % (data_line_counter,line_list))
 				if line_list_len > 2:
@@ -1362,6 +1366,7 @@ class BMU:
 			time_value_str = time_limit_list[0]
 			
 			# Pitää muuttaa stringistä takaisin datetime-muotoon, että voidaan laskea
+			time_value_str = time_value_str[:19]
 			time_value = datetime.strptime(time_value_str,"%Y-%m-%d %H:%M:%S")
 			
 			time_delta_value = int(time_limit_list[1])
@@ -1596,7 +1601,13 @@ class BMU:
 				print("BMU: ERR: Not found transitions for state: %s" % self.current_state_name)
 				return 0
 
-		
+	def stop(self):	
+
+		# Poistetaan ESU-tilat
+		for state in self.states:
+			del self.state_array[state]
+
+
 def import_analyze_file(pathname,filename,mode):
 
 	print("import_analyze_file: %s %s, mode: %s" % (pathname,filename,mode))
@@ -1782,6 +1793,10 @@ def analyze_logs(args,gui,source,trace_mode):
 
 	# Käynnistetään tilakone ja ajetaan analysoinnit
 	SM.run()	
+
+	# Pysäytetään tilakone
+	SM.stop()	
+	del SM
 
 	print("\n ~~~ analyze_run_counter = %s\n" % analyze_run_counter)
 	print("Total execution time: %.3f seconds\n" % (time.time() - start_time))
