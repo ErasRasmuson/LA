@@ -1,0 +1,34 @@
+ECHO OFF
+
+SET MY_PATH=D:\MyProjects\LA
+
+SET SCRIPT_PATH=%MY_PATH%\LogGen\
+SET OUTPUT_PATH=%MY_PATH%\LogFile\PreProsessed\
+
+python %SCRIPT_PATH%LogGen.py ^
+					-log_name "TLG_4" ^
+					-event_versatility 3 ^
+					-traces_max 8 ^
+					-area_size  "1000x600" ^
+					-area_pixel_size  "10" ^
+					-date  		 "24.02.2016" ^
+					-start_time  "08:00:00" ^
+					-stop_time  "09:00:00" ^
+					-busstops_matrix "2x2" ^
+					-busstops_area "200x100" ^
+					-busstops_A 2 ^
+					-busstops_B 2 ^
+					-busstop_size "40x40" ^
+					-bus_msg_interval 30 ^
+					-bus_speed 50 ^
+					-bus_speed_variance 15 ^
+					-bus_amount 2 ^
+					-line_route "L001:red:0:A1,M1,M3,B1" ^
+					-line_route "L002:green:5:A2,M2,M4,B2" ^
+					-line_locat_reso 10 ^
+					-single_log 1 ^
+					-debug 0 ^
+					-output_path %OUTPUT_PATH% ^
+					-gui_enable 1 ^
+					-gui_zoom 0.75 ^
+					-gui_line_zoom 6

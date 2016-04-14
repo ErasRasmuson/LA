@@ -232,16 +232,17 @@ class GUI_LogArea(GUI,QWidget):
 		self.loop_counter_max = loop_counter_max
 		self.t1 = t1		
 
-		self.trace_mode = "ALL_traces"
+		#self.trace_mode = "ALL_traces"
+		self.trace_mode = "LAST_trace"
 
 		self.generate_callback_function=callback_function
 
 	def initUI(self,name,x,y,width,height):
 
 		combo = QComboBox(self)
+		combo.addItem("LAST_trace")
 		combo.addItem("ALL_traces")
 		combo.addItem("FIRST_trace")
-		combo.addItem("LAST_trace")
 		combo.activated[str].connect(self.onComboActivated) 
 		combo.move(10,5)
 		self.setGeometry(x,y,width,height)

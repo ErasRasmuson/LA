@@ -437,7 +437,7 @@ class TestArea:
 			f.close()
 
 	def generate_bus_runs(self,date,start_time,stop_time,line_locat_reso,area_pixel_size,
-				 bus_msg_interval,bus_speed,bus_speed_variance,bus_amount,single_log,debug,gui,source,trace_mode):
+				 bus_msg_interval,bus_speed,bus_speed_variance,bus_amount,single_log,debug,gui,gui_info_enable,source,trace_mode):
 
 		bus_line = {}
 		bus_state = {}
@@ -475,6 +475,7 @@ class TestArea:
 		self.trace_mode = trace_mode
 
 		self.debug = debug
+		self.gui_info_enable = gui_info_enable
 
 		self.single_log = single_log
 
@@ -598,9 +599,6 @@ class TestArea:
 			loop_counter += 1
 			#print("loop: %s" % loop_counter)
 			#time.sleep(0.2)
-
-			#loop_seconds = loop_counter * bus_msg_interval
-			#loop_time = t1 + timedelta(seconds=loop_seconds)
 
 			loop_time,loop_seconds = self.calculate_loop_time(loop_counter,self.bus_msg_interval)
 
@@ -747,6 +745,7 @@ class TestArea:
 		print("Generated rtat_events   = %9d" % self.logs_event_rtat_counter) 
 		print("Generated ad_events     = %9d" % self.logs_event_ad_counter) 
 		print("Generated events all    = %9d" % self.logs_event_counter) 
+		print("Generated traces        = %9d (max %s)" % (trace_counter,self.traces_max)) 
 
 		print("\nExecution time of generating: %.3f seconds" % (time.time() - generate_start_time))
 
@@ -821,8 +820,9 @@ class TestArea:
 				if self.gui_enable == 1:
 					str = "%s, %s, %s, %s\n" % (loop_time,bus,x_bus,y_bus)
 					if self.source == "Area":
-						# Huom! T�m� laittaa nurkkapisteen mukaan, ei keskipisteen !!
-						self.gui.draw_box(self.qp,"Fill",x_bus,y_bus-20,8,8,"I")
+						if self.gui_info_enable > 0:
+							# Huom! T�m� laittaa nurkkapisteen mukaan, ei keskipisteen !!
+							self.gui.draw_box(self.qp,"Fill",x_bus,y_bus-20,8,8,"I")
 						
 
 				# Tarkistetaan miten ennustus on toiminut M-pys�keill�. T�m� vain testi� varten !!
@@ -892,9 +892,10 @@ class TestArea:
 					# Paikkojen n�ytt�minen GUI:ssa
 					if self.gui_enable == 1:
 						if self.source == "Area":
-							str = "%s, %s, %s, %s\n" % (loop_time,bus,x_bus,y_bus)
-							# Huom! T�m� laittaa nurkkapisteen mukaan, ei keskipisteen !!
-							self.gui.draw_box(self.qp,"Fill",x_bus,y_bus-20,8,8,"O")
+							if self.gui_info_enable > 0:
+								str = "%s, %s, %s, %s\n" % (loop_time,bus,x_bus,y_bus)
+								# Huom! T�m� laittaa nurkkapisteen mukaan, ei keskipisteen !!
+								self.gui.draw_box(self.qp,"Fill",x_bus,y_bus-20,8,8,"O")
 						#else:
 						#	self.gui.drawLogEvent(self.qp,1,loop_counter,"boxA")
 							#self.trace_pos_locat_start[bus] = loop_counter
@@ -915,9 +916,9 @@ class TestArea:
 							if self.source == "Area":
 								str = "%s, %s, %s, %s\n" % (loop_time,bus,x_bus,y_bus)
 								#self.gui.draw_box(self.qp,"Fill",x_bus,y_bus+10,10,str)
-
-								# Huom! T�m� laittaa nurkkapisteen mukaan, ei keskipisteen !!
-								self.gui.draw_box(self.qp,"Fill",x_bus,y_bus+10,8,8,"R")
+								if self.gui_info_enable > 0:
+									# Huom! T�m� laittaa nurkkapisteen mukaan, ei keskipisteen !!
+									self.gui.draw_box(self.qp,"Fill",x_bus,y_bus+10,8,8,"R")
 							else:
 								self.gui.drawLogEvent(self.qp,1,loop_counter,"boxB")
 								self.trace_pos_locat_start[bus] = loop_counter
@@ -1210,10 +1211,13 @@ def generate_bus_run_logs(args,gui,source,trace_mode):
 
 	global test_area
 
+	# Sallitaan tai estetään bussitietojen näyttö testialueessa
+	gui_info_enable = 0
+
 	# Generoidaan lokit testialueelta
 	test_area.generate_bus_runs(args.date,args.start_time,args.stop_time,args.line_locat_reso,args.area_pixel_size,
 					   args.bus_msg_interval,args.bus_speed,args.bus_speed_variance,
-					   args.bus_amount,args.single_log,args.debug,gui,source,trace_mode)
+					   args.bus_amount,args.single_log,args.debug,gui,gui_info_enable,source,trace_mode)
 
 #******************************************************************************
 #
