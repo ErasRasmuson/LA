@@ -4,7 +4,7 @@ VARIABLES = {
 	"INT-START-DATE":    		"21.08.06",
 	"INT-START-TIME":    		"03:00:00",
 	"INT-STOP-TIME":     		"23:00:00",
-	"SET-LINE-NUMBER":   		"002150",
+	"SET-LINE-NUMBER":   		"002132",
 	"SET-LINE-DIR":   	 		"2",
 	"SET-MAX-LOGIN-RTAT-TIME": 	"1200",
 	"SET-MAX-RTAT-PASS-TIME":  	"1800",
@@ -40,7 +40,7 @@ ESU["SEARCH LOGIN"] = {
 	
 	"TF_state":    			"SEARCH starting",
 	"TF_func":     			"LOGIN_found",
-	"TN_state":    			"SEARCH starting",
+	"TN_state":    			"STOP",
 	"TN_func":     			"LOGIN_not_found",
 	"TE_state":    			"STOP",
 	"GUI_line_num":			"0"
@@ -55,12 +55,12 @@ ESU["SEARCH starting"] = {
 
 	"ssd_lat_col_name":    	"LOCAT-LATITUDE",
 	"ssd_lon_col_name":    	"LOCAT-LONGITUDE",
-	"ssd_filename_expr":   	"terminal_busstop_<LOG-LINE-NUMBER>_<LOG-DIRECTION>.csv",
+	"ssd_filename_expr":   	"terminal_busstop_<LOG-LINE-NUMBER><LOG-DIRECTION>.csv",
 	"ssd_varnames":        	"LOG-LINE-NUMBER,LOG-DIRECTION",
 
 	"TF_state":				"SEARCH arriving",
 	"TF_func":     			"starting_found",
-	"TN_state":    			"SEARCH RTAT",
+	"TN_state":    			"STOP",
 	"TN_func":     			"",
 	"TE_state":    			"SEARCH RTAT",
 	"TE_func":     			"",
@@ -79,45 +79,13 @@ ESU["SEARCH arriving"] = {
 	"ssd_filename_expr":   	"target_busstop_<RTAT-SIGN-NUMBER>.csv",
 	"ssd_varnames":   		"RTAT-SIGN-NUMBER",
 	
-	"TF_state":    			"SEARCH BQD",
+	"TF_state":    			"STOP",
 	"TF_func":     			"arriving_found",
-	"TN_state":    			"SEARCH RTAT",
-	"TN_func":     			"",
-	"TE_state":    			"STOP",
-	"TE_func":     			"",
-	"GUI_line_num":			"5"
-}
-ESU["SEARCH BQD"] = {
-	"esu_mode":             "SEARCH_EVENT:First",
-	"log_filename_expr":    "BQD_log_BQD.csv",
-	"log_varnames":         "BQD-BUS-NUMBER,BQD-LINE-NUMBER",
-	"log_timecol_name":     "BQD-MSG-TIMESTAMP",
-	"log_start_time_expr":  "<RTAT-MSG-TIMESTAMP>,0",
-	"log_stop_time_expr":   "<RTAT-MSG-TIMESTAMP>,+<SET-MAX-RTAT-PASS-TIME>",
-	
-	"TF_state":    			"SEARCH AD",
-	"TF_func":     			"BQD_found",
-	"TN_state":    			"SEARCH RTAT",
+	"TN_state":    			"STOP",
 	"TN_func":     			"",
 	"TE_state":    			"STOP",
 	"TE_func":     			"",
 	"GUI_line_num":			"3"
-}
-ESU["SEARCH AD"] = {
-	"esu_mode":             "SEARCH_EVENT:Last",
-	"log_filename_expr":    "FromCCS_AD.csv",
-	"log_varnames":         "AD-LINE-NUMBER,AD-DIRECTION,AD-BUS-NUMBER",
-	"log_timecol_name":     "AD-MSG-TIMESTAMP",
-	"log_start_time_expr":  "<RTAT-MSG-TIMESTAMP>,0",
-	"log_stop_time_expr":   "<RES-BUSSTOP-PASS-TIME>,0",
-	
-	"TF_state":    			"SEARCH RTAT",
-	"TF_func":    			"AD_found",
-	"TN_state":    			"SEARCH RTAT",
-	"TN_func":     			"",
-	"TE_state":    			"STOP",
-	"TE_func":     			"",
-	"GUI_line_num":			"4"
 }
 STOP = {
 	"func":    				"stop"
@@ -127,8 +95,7 @@ def start():
 	print("  Transition-function: start_function")
 	set_sbk_file("EPT","SBK_ID","RTAT-BUS-NUMBER","RTAT-LINE-NUMBER","RTAT-DIRECTION","RTAT-SIGN-NUMBER",
 				 "RTAT-MSG-TIMESTAMP","RTAT-TAT-TIME","LOG-MSG-TIMESTAMP","RES-BUS-START-TIME",
-				 "RES-BUSSTOP-PASS-TIME","BQD-MSG-TIMESTAMP","AD-MSG-TIMESTAMP",
-				 "RES-PASS-TIME-ERROR","RES-BQD-TIME-ERROR")
+				 "RES-BUSSTOP-PASS-TIME")
 	set_datetime_variable("SET-START-TIMESTAMP","INT-START-DATE","INT-START-TIME")
 	set_datetime_variable("SET-STOP-TIMESTAMP","INT-START-DATE","INT-STOP-TIME")
 	copy_variable("RTAT-LINE-NUMBER","SET-LINE-NUMBER")
@@ -152,8 +119,8 @@ def starting_found():
 	copy_variable("RES-BUS-START-TIME","INT-LOCAT-TIME-OLD")
 def arriving_found():
 	print("  Transition-function: Found_PASS")
-	copy_variable("BQD-LINE-NUMBER","LOG-LINE-NUMBER")
-	copy_variable("BQD-BUS-NUMBER","LOG-BUS-NUMBER")
+	#copy_variable("BQD-LINE-NUMBER","LOG-LINE-NUMBER")
+	#copy_variable("BQD-BUS-NUMBER","LOG-BUS-NUMBER")
 		
 	locat_old_timestamp = get_time_variable_value("INT-LOCAT-TIME-OLD")
 	locat_new_timestamp = get_time_variable_value("INT-LOCAT-TIME-NEW")
@@ -165,40 +132,6 @@ def arriving_found():
 	
 	passing_time =  locat_old_timestamp + datetime.timedelta(seconds= time_diff.seconds / 2)
 	set_variable("RES-BUSSTOP-PASS-TIME",str(passing_time))
-def BQD_found():
-	print("  Transition-function: Found_BQD")
-	copy_variable("AD-LINE-NUMBER","LOG-LINE-NUMBER")
-	copy_variable("AD-BUS-NUMBER","LOG-BUS-NUMBER")
-	copy_variable("AD-DIRECTION","LOG-DIRECTION")
-	copy_variable("RES-BQD-TIME","BQD-MSG-TIMESTAMP")
-def AD_found():
-	print("  Transition-function: Found_AD")
-	rtat_timestamp = get_time_variable_value("RTAT-TAT-TIME")
-	
-	ad_value_dec = get_variable_int_value("AD-VALUE",16)
-	print("  ad_value_dec = %d (hex: %s)" % (ad_value_dec,get_variable_str_value("AD-VALUE")))
-	
-	if get_variable_str_value("AD-TYPE") == "1":
-		ad_value = ad_value_dec
-	else:
-		ad_value = 0 - ad_value_dec
-		
-	rtat_ad_timestamp =  rtat_timestamp + datetime.timedelta(seconds=ad_value)
-	set_variable("RES-RTAT-AD-VALUE",str(rtat_ad_timestamp))
-	
-	passing_time = get_time_variable_value("RES-BUSSTOP-PASS-TIME")
-	passing_time_error = passing_time - rtat_ad_timestamp
-	#print("  passing_time_error: %d" % passing_time_error.seconds)
-	
-	set_variable("RES-PASS-TIME-ERROR",str(passing_time_error.seconds))
-	
-	bqd_time = get_time_variable_value("BQD-MSG-TIMESTAMP")
-	bqd_time_error = passing_time - bqd_time
-	#print("  bqd_time_error: %d" % bqd_time_error.seconds)
-	
-	set_variable("RES-BQD-TIME-ERROR",str(bqd_time_error.seconds))
-
-	print_sbk_file()
 def stop():
 	print_sbk_file()
 

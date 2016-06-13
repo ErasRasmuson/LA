@@ -366,6 +366,8 @@ class ESU:
 		lon_dist = self.position_area_center_lon - lon
 		lat_dist = self.position_area_center_lat - lat
 		
+		#print("check_position_in_area: lon=%s, lat=%s" % (lon,lat))
+
 		# Pitäisikö olla asetus, jolla laatikon koko voidaan ylikirjoittaa ?! 
 
 		# Tarkistetaan onko koordinaatti suorakaiteen muotoisen alueen sisällä
@@ -421,14 +423,16 @@ class ESU:
 			ana.variables["INT-LOCAT-TIME-NEW"] = pos_time
 
 			# Kirjoitetaan piste Google Earth kml-tiedostoon
-			if self.ge_kml_enable == 1:
-				coord_list = [[lon,lat]]
+			#if self.ge_kml_enable == 1:
+			#	coord_list = [[lon,lat]]
 				#write_point_to_kml_file(self.klm_file_path_name,self.position_counter,coord_list,200)	
-				write_mark_to_kml_file(self.klm_file_path_name,self.position_counter,coord_list,pos_time,200)
+			#	write_mark_to_kml_file(self.klm_file_path_name,self.position_counter,coord_list,pos_time,200)
 
 			pos_old_in_area = self.check_position_in_area(ana.variables["INT-LONGITUDE-OLD"],ana.variables["INT-LATITUDE-OLD"])
 			pos_new_in_area = self.check_position_in_area(ana.variables["INT-LONGITUDE-NEW"],ana.variables["INT-LATITUDE-NEW"])
 				
+			#print("%5d: pos_old_in_area=%s, pos_new_in_area=%s" % (self.position_counter,pos_old_in_area,pos_new_in_area))
+
 			if state_type_param == "Leaving":
 				#print("check_position_event: Leaving")
 				
@@ -444,7 +448,7 @@ class ESU:
 			elif state_type_param == "Entering":
 				#print("check_position_event: Entering")
 				
-				# Tarkistetaan position-datasta ollaan tultu alueelle
+				# Tarkistetaan position-datasta ollaanko tultu alueelle
 				if pos_old_in_area == False and pos_new_in_area == True:
 					#self.line_found_timestamp = ana.variables["INT-LOCAT-TIME-OLD"]
 					self.line_found_timestamp  = datetime.strptime(ana.variables["INT-LOCAT-TIME-OLD"],"%Y-%m-%d %H:%M:%S")
@@ -459,6 +463,16 @@ class ESU:
 		else:
 			for column_name in self.log_column_names_list:
 				self.last_found_new_variables[column_name] = self.last_found_variables[column_name]
+
+		# Kirjoitetaan piste Google Earth kml-tiedostoon
+		if self.ge_kml_enable == 1:
+			lat = self.last_found_new_variables[self.position_lat_variable_name]
+			lon = self.last_found_new_variables[self.position_lon_variable_name]
+			pos_time = self.last_found_new_variables[self.state_log_time_column]
+			coord_list = [[lon,lat]]
+			#write_point_to_kml_file(self.klm_file_path_name,self.position_counter,coord_list,200)	
+			write_mark_to_kml_file(self.klm_file_path_name,self.position_counter,coord_list,pos_time,200)
+
 		return False
 		
 	def read_input_variables(self,state_log_variables,state_data_variables,state_position_variables):
@@ -678,6 +692,17 @@ class ESU:
 			#print("position_area_left_down_lat = %s" % self.position_area_left_down_lat)
 			#print("position_area_right_up_lon  = %s" % self.position_area_right_up_lon)
 			#print("position_area_right_up_lat  = %s" % self.position_area_right_up_lat)
+
+			# Kirjoitetaan alue Google Earth kml-tiedostoon
+			if self.ge_kml_enable == 1:
+				coord_list = []
+				coord_list.append([self.position_area_left_down_lon,self.position_area_left_down_lat])
+				coord_list.append([self.position_area_left_down_lon,self.position_area_right_up_lat])
+				coord_list.append([self.position_area_right_up_lon,self.position_area_right_up_lat])
+				coord_list.append([self.position_area_right_up_lon,self.position_area_left_down_lat])
+				coord_list.append([self.position_area_left_down_lon,self.position_area_left_down_lat])	
+				#write_area_to_kml_file(klm_file_path_name,stop_id,coord_list,200)
+				write_area_to_kml_file(self.klm_file_path_name,datafile_name,coord_list,200)
 
 		else:
 			return False

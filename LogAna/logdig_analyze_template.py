@@ -123,6 +123,7 @@ def get_variable_int_value(var_name,base):
 	try:
 		print("  Get variable: \"%s\", base = %s" % (var_name,base))
 		var_value = int(variables[var_name],base)
+		#print("  Get variable: value = %s" % (var_value))
 		return var_value
 	except KeyError:
 		print("get_variable_int_value: ERR: Getting variable: \"%s\", base = %s" % (var_name,base))
