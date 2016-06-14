@@ -11,10 +11,10 @@ VARIABLES = {
 	"SET-MAX-PASS-ERR-TIME":   	"120"
 	}
 START = {
-	"state":   				"SEARCH RTAT",
+	"state":   				"RTAT",
 	"func":   				"start"
 	}
-ESU["SEARCH RTAT"] = {
+ESU["RTAT"] = {
 	"esu_mode":             "SEARCH_EVENT:First",
 	"log_filename_expr":    "FromCCS_RTAT.csv",
 	"log_varnames":         "RTAT-LINE-NUMBER",
@@ -22,30 +22,28 @@ ESU["SEARCH RTAT"] = {
 	"log_start_time_expr":  "<INT-START-TIMESTAMP>,+1",
 	"log_stop_time_expr":   "<INT-STOP-TIMESTAMP>,0",
 	
-	"TF_state":    			"SEARCH LOGIN",
+	"TF_state":    			"LOGIN",
 	"TN_state":    			"STOP",
 	"TE_state":    			"STOP",
 	"onentry_func": 		"RTAT_onentry",
 	"GUI_line_num":			"2"
 }
-ESU["SEARCH LOGIN"] = {
+ESU["LOGIN"] = {
 	"esu_mode":             "SEARCH_EVENT:First",
 	"log_filename_expr":    "Apo_<LOG-BUS-NUMBER>_LOG.csv",
-	"log_varnames":         "LOG-MSG-TYPE=LOGIN,LOG-BUS-NUMBER=<RTAT-BUS-NUMBER>,\
-							LOG-LINE-NUMBER=<SET-LINE-NUMBER>,\
-							LOG-DIRECTION=<RTAT-DIRECTION>",
+	"log_varnames":         "LOG-MSG-TYPE=LOGIN,LOG-BUS-NUMBER=<RTAT-BUS-NUMBER>,LOG-LINE-NUMBER=<SET-LINE-NUMBER>,LOG-DIRECTION=<RTAT-DIRECTION>",
 	"log_timecol_name":     "LOG-MSG-TIMESTAMP",
 	"log_start_time_expr":  "<RTAT-MSG-TIMESTAMP>,-<SET-MAX-LOGIN-RTAT-TIME>",
 	"log_stop_time_expr":   "<RTAT-MSG-TIMESTAMP>,0",
 	
-	"TF_state":    			"SEARCH starting",
+	"TF_state":    			"Starting",
 	"TF_func":     			"LOGIN_found",
-	"TN_state":    			"SEARCH starting",
+	"TN_state":    			"Starting",
 	"TN_func":     			"LOGIN_not_found",
 	"TE_state":    			"STOP",
 	"GUI_line_num":			"0"
 }
-ESU["SEARCH starting"] = {
+ESU["Starting"] = {
 	"esu_mode":            	"SEARCH_POSITION:Leaving",
 	"log_filename_expr":   	"Apo_<LOG-BUS-NUMBER>_LOCAT.csv",
 	"log_varnames":        	"LOCAT-BUS-NUMBER=<LOG-BUS-NUMBER>",
@@ -58,15 +56,15 @@ ESU["SEARCH starting"] = {
 	"ssd_filename_expr":   	"terminal_busstop_<LOG-LINE-NUMBER><LOG-DIRECTION>.csv",
 	"ssd_varnames":        	"LOG-LINE-NUMBER,LOG-DIRECTION",
 
-	"TF_state":				"SEARCH arriving",
+	"TF_state":				"Arriving",
 	"TF_func":     			"starting_found",
-	"TN_state":    			"SEARCH RTAT",
+	"TN_state":    			"RTAT",
 	"TN_func":     			"",
 	"TE_state":    			"STOP",
 	"TE_func":     			"",
 	"GUI_line_num":			"1"
 }
-ESU["SEARCH arriving"] = {
+ESU["Arriving"] = {
 	"esu_mode":             "SEARCH_POSITION:Entering",
 	"log_filename_expr":    "Apo_<LOCAT-BUS-NUMBER>_LOCAT.csv",
 	"log_varnames":         "LOCAT-BUS-NUMBER",
@@ -79,9 +77,9 @@ ESU["SEARCH arriving"] = {
 	"ssd_filename_expr":   	"target_busstop_<RTAT-SIGN-NUMBER>.csv",
 	"ssd_varnames":   		"RTAT-SIGN-NUMBER",
 	
-	"TF_state":    			"SEARCH RTAT",
+	"TF_state":    			"RTAT",
 	"TF_func":     			"arriving_found",
-	"TN_state":    			"SEARCH RTAT",
+	"TN_state":    			"RTAT",
 	"TN_func":     			"",
 	"TE_state":    			"STOP",
 	"TE_func":     			"",

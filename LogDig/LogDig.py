@@ -444,6 +444,16 @@ class ESU:
 					print("POS OLD: %s, %s, %s" % (ana.variables["INT-LATITUDE-OLD"],ana.variables["INT-LONGITUDE-OLD"],ana.variables["INT-LOCAT-TIME-OLD"]))
 					print("POS NEW: %s, %s, %s" % (ana.variables["INT-LATITUDE-NEW"],ana.variables["INT-LONGITUDE-NEW"],ana.variables["INT-LOCAT-TIME-NEW"]))
 					return True
+
+				# Jos jo ollaan jo valmiiksi alueen ulkopuolella. 
+				# Periaatteessa tämä virhetapaus, mutta sallitaan koska alkuperäinen lokidata voi olla puutteellinen.
+				# Pitäisi tehdä oma moodi: Outside ?
+				elif pos_old_in_area == False and pos_new_in_area == False:
+					self.line_found_timestamp  = datetime.strptime(ana.variables["INT-LOCAT-TIME-NEW"],"%Y-%m-%d %H:%M:%S")
+					print("Leaving: Already outside warning: time: %s" % ana.variables["INT-LOCAT-TIME-NEW"])
+					print("POS OLD: %s, %s, %s" % (ana.variables["INT-LATITUDE-OLD"],ana.variables["INT-LONGITUDE-OLD"],ana.variables["INT-LOCAT-TIME-OLD"]))
+					print("POS NEW: %s, %s, %s" % (ana.variables["INT-LATITUDE-NEW"],ana.variables["INT-LONGITUDE-NEW"],ana.variables["INT-LOCAT-TIME-NEW"]))
+					return True
 					
 			elif state_type_param == "Entering":
 				#print("check_position_event: Entering")
@@ -456,7 +466,17 @@ class ESU:
 					print("POS OLD: %s, %s, %s" % (ana.variables["INT-LATITUDE-OLD"],ana.variables["INT-LONGITUDE-OLD"],ana.variables["INT-LOCAT-TIME-OLD"]))
 					print("POS NEW: %s, %s, %s" % (ana.variables["INT-LATITUDE-NEW"],ana.variables["INT-LONGITUDE-NEW"],ana.variables["INT-LOCAT-TIME-NEW"]))
 					return True
-					
+
+				# Jos ollaan valmiiksi alueen sisällä
+				# Periaatteessa tämä virhetapaus, mutta sallitaan koska alkuperäinen lokidata voi olla puutteellinen.
+				# Pitäisi tehdä oma moodi: Inside ?
+				elif pos_old_in_area == True and pos_new_in_area == True:
+					#self.line_found_timestamp = ana.variables["INT-LOCAT-TIME-OLD"]
+					self.line_found_timestamp  = datetime.strptime(ana.variables["INT-LOCAT-TIME-OLD"],"%Y-%m-%d %H:%M:%S")
+					print("Entering: Already inside warning: time: %s" % ana.variables["INT-LOCAT-TIME-OLD"])
+					print("POS OLD: %s, %s, %s" % (ana.variables["INT-LATITUDE-OLD"],ana.variables["INT-LONGITUDE-OLD"],ana.variables["INT-LOCAT-TIME-OLD"]))
+					print("POS NEW: %s, %s, %s" % (ana.variables["INT-LATITUDE-NEW"],ana.variables["INT-LONGITUDE-NEW"],ana.variables["INT-LOCAT-TIME-NEW"]))
+					return True				
 			else:
 				print("check_position_event: Unknown")
 				return False
@@ -924,10 +944,13 @@ class ESU:
 
 		print("")
 		print("----------------------------------------------------------------")
-		print("ESU: %s is running: start_time = %s, stop_time = %s, esu_run_counter = %s" % (self.name,start_time,stop_time,self.esu_run_counter ))
+		print("ESU: Type: %s" % state_type)
+		print("ESU: Name: %s, cnt = %s" % (self.name,self.esu_run_counter))
+		print("ESU: Start_time = %s" % (start_time))
+		print("ESU: Stop_time  = %s" % (stop_time))
 		print("ESU: read orig logfile_name  : %s" % logfile_name)
-		print("ESU: read orig datafile_name : %s" % datafile_name)
-		print("ESU: Search type: %s" % state_type)
+		if len(datafile_name) > 0:
+			print("ESU: read orig datafile_name : %s" % datafile_name)
 		
 		# Alustetaan Google Earthin kml-tiedosto (vain tarkistusta varten ?!)
 		if self.ge_kml_enable == 1:
@@ -1047,21 +1070,21 @@ class ESU:
 		if ret == False:
 			print("ESU: ERR: Getting log-variables")
 			self.onexit(-1)
-
-		#ret, datafile_name = self.get_variable_value(datafile_name,self.state_data_variables_list)			
-		ret, datafile_name = self.get_variable_value(datafile_name,all_variables_list)
-		if ret == False:
-			print("ESU: ERR: Getting data-variables")
-			self.onexit(-1)
-			
 		print("ESU: read logfile_name  : %s" % logfile_name)
-		print("ESU: read datafile_name : %s" % datafile_name)
-	
-		# Luetaan datatiedosto (jos käytössä) ja haetaan sieltä tiedot data-muuttujilla
-		ret = self.read_datafile(datafile_name)
-		if ret == False:
-			print("ESU: WARN: Reading datafile (or it is not exist)")
-			self.onexit(-1)
+
+		if len(datafile_name) > 0:
+			#ret, datafile_name = self.get_variable_value(datafile_name,self.state_data_variables_list)			
+			ret, datafile_name = self.get_variable_value(datafile_name,all_variables_list)
+			if ret == False:
+				print("ESU: ERR: Getting data-variables")
+				self.onexit(-1)
+			print("ESU: read datafile_name : %s" % datafile_name)
+		
+			# Luetaan datatiedosto (jos käytössä) ja haetaan sieltä tiedot data-muuttujilla
+			ret = self.read_datafile(datafile_name)
+			if ret == False:
+				print("ESU: WARN: Reading datafile (or it is not exist)")
+				self.onexit(-1)
 		
 		# Luetaan lokitiedosto ja haetaan sieltä tiedot log-muuttujilla halutulla aikavälillä
 		return self.read_logfile(logfile_name,start_time,stop_time,state_type_param,state_type_param2,serial_found_cnt)
@@ -1991,7 +2014,14 @@ def init_analyzing(args):
 		
 	# Lisätään datatiedostoihin polku
 	for state_datafile_name in ana.state_datafiles.keys():
-		ana.state_datafiles[state_datafile_name]		= args.input_ssd_path + ana.state_datafiles[state_datafile_name]
+		
+		file_name = ana.state_datafiles[state_datafile_name]
+		if len(file_name) > 0:
+			#ana.state_datafiles[state_datafile_name] = args.input_ssd_path + ana.state_datafiles[state_datafile_name]
+			ana.state_datafiles[state_datafile_name] = args.input_ssd_path + file_name
+		else:
+			ana.state_datafiles[state_datafile_name] = ""
+
 		print("ESU: %-15s Datafile: %s" % (state_datafile_name, ana.state_datafiles[state_datafile_name]))
 
 
