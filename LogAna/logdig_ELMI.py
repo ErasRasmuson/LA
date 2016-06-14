@@ -40,7 +40,7 @@ ESU["SEARCH LOGIN"] = {
 	
 	"TF_state":    			"SEARCH starting",
 	"TF_func":     			"LOGIN_found",
-	"TN_state":    			"STOP",
+	"TN_state":    			"SEARCH starting",
 	"TN_func":     			"LOGIN_not_found",
 	"TE_state":    			"STOP",
 	"GUI_line_num":			"0"
@@ -60,9 +60,9 @@ ESU["SEARCH starting"] = {
 
 	"TF_state":				"SEARCH arriving",
 	"TF_func":     			"starting_found",
-	"TN_state":    			"STOP",
+	"TN_state":    			"SEARCH RTAT",
 	"TN_func":     			"",
-	"TE_state":    			"SEARCH RTAT",
+	"TE_state":    			"STOP",
 	"TE_func":     			"",
 	"GUI_line_num":			"1"
 }
@@ -79,9 +79,9 @@ ESU["SEARCH arriving"] = {
 	"ssd_filename_expr":   	"target_busstop_<RTAT-SIGN-NUMBER>.csv",
 	"ssd_varnames":   		"RTAT-SIGN-NUMBER",
 	
-	"TF_state":    			"STOP",
+	"TF_state":    			"SEARCH RTAT",
 	"TF_func":     			"arriving_found",
-	"TN_state":    			"STOP",
+	"TN_state":    			"SEARCH RTAT",
 	"TN_func":     			"",
 	"TE_state":    			"STOP",
 	"TE_func":     			"",
@@ -132,6 +132,8 @@ def arriving_found():
 	
 	passing_time =  locat_old_timestamp + datetime.timedelta(seconds= time_diff.seconds / 2)
 	set_variable("RES-BUSSTOP-PASS-TIME",str(passing_time))
+
+	print_sbk_file()
 def stop():
 	print_sbk_file()
 

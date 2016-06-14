@@ -23,7 +23,7 @@ python %SCRIPT_PATH%LogDig.py ^
 						-analyzing_mode NORMAL:0 ^
 						-gui_enable 1 ^
 						-gui_seq_draw_mode "time" ^
-						-ge_kml_enable 1
+						-ge_kml_enable 0
 
 REM						-analyzing_mode COMPARE:3 ^
 REM						-analyzing_mode NORMAL:0 ^

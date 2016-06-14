@@ -49,7 +49,7 @@ class LogFilesData:
 		self.logfile_already_read = {}
 
 	def read(self,logfile_name,time_column):
-		print(" >>>> LogFilesData: read_logfile: %s" % logfile_name)
+		#print(" >>>> LogFilesData: read_logfile: %s" % logfile_name)
 
 		if os.path.isfile(logfile_name):
 			
@@ -633,6 +633,21 @@ class ESU:
 		else:
 			var_oper_mode = 1
 
+		# 14.6.2016 HUOM! Pitäisi vielä lisätä seuraavat moodit:
+		# - 3: regexp
+		# - (4: Toisen muuttujan arvon sijoitus, on jo !)
+		# - 5: Integer (float) vertailu (<>=)
+		# - 6: Integer (float) vertailu annetulla lukualueella (esim. 100-200)
+		# - 7: Lista vertailu. Listassa sallitut arvot (String tai myös 5- ja 6-kohdan tietoja ?).
+		# - 8: Haetaan arvo jostain taulukosta
+		# - 9: SSD-haut vielä erikseen (ne ei kuulu tähän funktioon?) ?
+		#		- Time window
+		#		- "index" window (esim. paikkaikkuna)
+		#		- Time + "index" window
+		#		- "First" ?
+		#		- "Last" ?
+		#		- "External" ?
+
 		print(" %5d: mode:%s, \"%s\": \"%s\" \"%s\"" % (cnt,var_oper_mode,var_name1,var_oper_right_part,ana.variables[var_name1]))
 
 		return var_oper_mode,var_name1,var_value1,var_name2
@@ -909,7 +924,7 @@ class ESU:
 
 		print("")
 		print("----------------------------------------------------------------")
-		print("ESU: %s is running: start_time = %s, stop_time = %s, run_counter = %s" % (self.name,start_time,stop_time,self.esu_run_counter ))
+		print("ESU: %s is running: start_time = %s, stop_time = %s, esu_run_counter = %s" % (self.name,start_time,stop_time,self.esu_run_counter ))
 		print("ESU: read orig logfile_name  : %s" % logfile_name)
 		print("ESU: read orig datafile_name : %s" % datafile_name)
 		print("ESU: Search type: %s" % state_type)
@@ -1086,12 +1101,10 @@ class BMU:
 	state_stop_time_limit = ""
 	variables_list = []
 	start_state_counter = 0
-	#state_found_time = {}
 	state_found_metadata = {}
 	state_found_serial_metadata = {}
 	state_found_serial_metadata_counter = {}
 	state_found_counter = 0
-	#state_found_list = []
 	state_event_num = {}
 	event_last_stop_timestamp = {}
 	bmu_run_counter = 0
@@ -1103,6 +1116,24 @@ class BMU:
 				  QColor(255,0,255,127),
 				  QColor(0,255,255,127),
 				  QColor(0,0,0,127)]
+
+	state_found_counter_array = {}
+	state_not_found_counter_array = {}
+	state_exit_counter_array = {}
+	state_counter_array = {}
+
+	state_counter_array_all = 0
+	state_found_counter_array_all = 0
+	state_not_found_counter_array_all = 0
+	state_exit_counter_array_all = 0
+
+	states_found_id_list = []
+	states_not_found_id_list = []
+	states_exit_id_list = []
+
+	states_found_id_array = {}
+	states_not_found_id_array = {}
+	states_exit_id_array = {}
 
 	def __init__(self,name,analyze_file_mode,states,state_order,transition_names,start_state_name,transition,transition_function,
 				 state_onentry_function,state_onexit_function,end_state_name,state_logfiles,
@@ -1192,7 +1223,7 @@ class BMU:
 
 	def drawEventSequence(self):
 
-		print(" ******* drawEventSequence: trace-counter: %s" % self.trace_cnt)
+		#print(" ******* drawEventSequence: trace-counter: %s" % self.trace_cnt)
 
 		state_cnt = 0
 
@@ -1354,7 +1385,7 @@ class BMU:
 			
 				try:
 					var_value = ana.variables[var_name]
-					print("var_name = %s, var_value = %s" % (var_name,var_value))
+					#print("var_name = %s, var_value = %s" % (var_name,var_value))
 					
 				except KeyError:
 					print("BMU: ERR: Not found variable: %s in state: %s (get_variable_value)" % (var_name,self.name))
@@ -1381,7 +1412,7 @@ class BMU:
 		# Haetaan muuttujien arvot
 		time_limit_str_with_values = self.get_variable_value(time_limit_str)
 		
-		print("time_limit_str_with_values = %s" % time_limit_str_with_values)
+		#print("time_limit_str_with_values = %s" % time_limit_str_with_values)
 		
 		time_limit_list = time_limit_str_with_values.split(",")
 		time_limit_list_len = len(time_limit_list)
@@ -1427,7 +1458,29 @@ class BMU:
 		for state in self.states:
 			self.state_array[state] = ESU(state,self.logfiles_data,self.gui_enable,self.gui,self.state_GUI_line_num,self.ge_kml_enable)
 			#print("BMU: ESU: %s : %s" % (state,self.state_array[state]))
+
+			# Nollataan myös tilakohtaiset tuloslaskurit
+			self.state_found_counter_array[state] = 0
+			self.state_not_found_counter_array[state] = 0
+			self.state_exit_counter_array[state] = 0
+			self.state_counter_array[state] = 0
 			
+		# Nollataan yleiset laskurit
+		self.state_counter_array_all = 0
+		self.state_found_counter_array_all = 0
+		self.state_not_found_counter_array_all = 0
+		self.state_exit_counter_array_all = 0
+
+		# Nollataan tilojen paluuarvojen ID-listat
+		self.states_found_id_list = []
+		self.states_not_found_id_list = []
+		self.states_exit_id_list = []
+
+		# Nollataan tilojen tilakohtaiset paluuarvojen ID-listat
+		self.states_found_id_array = {}
+		self.states_not_found_id_array = {}
+		self.states_exit_id_array = {}
+
 		# Alkutilan nimi
 		self.current_state_name=self.start_state_name
 		
@@ -1568,7 +1621,7 @@ class BMU:
 				# Aikarajat
 				self.start_time  = self.convert_time_limit_string(self.state_start_time_limit[self.current_state_name])
 				self.stop_time   = self.convert_time_limit_string(self.state_stop_time_limit[self.current_state_name])
-				print("BMU: start_time = %s stop_time = %s" % (self.start_time,self.stop_time))
+				#print("\nBMU: start_time = %s stop_time = %s" % (self.start_time,self.stop_time))
 				
 				# Piiretään GUI:hin aikaraja-janat
 				if self.gui_enable == 1:
@@ -1586,12 +1639,14 @@ class BMU:
 									state_position_variables,
 									state_type,
 									self.output_files_path)
-								
+							
+				print("\n---------------------------------------------------------------------------")	
+
 				# Tilan mahdollisen onexit-funktion haku ja ajo tilan ajon jälkeen
 				try:
 					onexit_function_name = self.state_onexit_function[self.current_state_name]
 					if len(onexit_function_name) > 0:
-						print("BMU: Found new onentry-function: %s" % (onexit_function_name))
+						print("BMU: Found new onexit-function: %s" % (onexit_function_name))
 
 						# Ajetaan funktio
 						self.run_function(onexit_function_name)
@@ -1622,15 +1677,88 @@ class BMU:
 
 					self.state_found_metadata[self.current_state_name] = time_found,self.state_found_counter
 
+				# Päivitetään tämänhetken tilanne lopputuloksiin
+				self.update_results(ret,self.current_state_name)
+
 			except KeyError:
 				print("BMU: ERR: Not found transitions for state: %s" % self.current_state_name)
 				return 0
 
+	def update_results(self,ret,state_name):
+
+		self.state_counter_array_all += 1
+		self.state_counter_array[state_name] += 1
+
+		if ret == "Found":
+			self.state_found_counter_array[state_name] += 1
+			self.state_found_counter_array_all += 1
+
+			# Lisätään tilan ID (järjestysnumero) listaan
+			self.states_found_id_list.append(self.state_counter_array_all)
+			self.states_found_id_array.setdefault(state_name,list()).append(self.state_counter_array_all)
+
+
+		if ret == "Not found":
+			self.state_not_found_counter_array[state_name] += 1
+			self.state_not_found_counter_array_all += 1
+
+			# Lisätään tilan ID (järjestysnumero) listaan
+			self.states_not_found_id_list.append(self.state_counter_array_all)
+			self.states_not_found_id_array.setdefault(state_name,list()).append(self.state_counter_array_all)
+
+		if ret == "Exit":
+			self.state_exit_counter_array[state_name] += 1
+			self.state_exit_counter_array_all += 1
+
+			# Lisätään tilan ID (järjestysnumero) listaan
+			self.states_exit_id_list.append(self.state_counter_array_all)
+			self.states_exit_id_array.setdefault(state_name,list()).append(self.state_counter_array_all)
+
+		print("\n#### BMU Counters: State: %10s, F =%4d, N =%4d, E =%4d | A =%4d (ID=%d)\n" % (state_name,
+			self.state_found_counter_array[state_name],
+			self.state_not_found_counter_array[state_name],
+			self.state_exit_counter_array[state_name],
+			self.state_counter_array[state_name],
+			self.state_counter_array_all))
+
+
 	def stop(self):	
 
-		# Poistetaan ESU-tilat
+		print("")
+		print("#### -----------------------------------------------------------------------------")
+
+		# Tulostetaan lopputulksia ja poistetaan ESU-tilat
 		for state in self.states:
+
+			print("#### BMU Counters: State: %-20s F =%4d, N =%4d, E =%4d | A =%4d" % (state,
+				self.state_found_counter_array[state],
+				self.state_not_found_counter_array[state],
+				self.state_exit_counter_array[state],
+				self.state_counter_array[state]))
+
 			del self.state_array[state]
+
+		print("#### -----------------------------------------------------------------------------")
+		print("#### BMU Counters: State: %-20s F =%4d, N =%4d, E =%4d | A =%4d" % ("All",
+			self.state_found_counter_array_all,
+			self.state_not_found_counter_array_all,
+			self.state_exit_counter_array_all,
+			self.state_counter_array_all ))
+
+		#print("States IDs:")
+		#print(" Found     : %s" % self.states_found_id_list) 
+		#print(" Not found : %s" % self.states_not_found_id_list) 
+		#print(" Exit      : %s" % self.states_exit_id_list) 
+
+		print("\n#### States \"Found\" IDs:")
+		for state in self.states_found_id_array.keys():
+			print("  %-20s: %s" % (state,self.states_found_id_array[state]))
+		print("#### States \"Not found\" IDs:")
+		for state in self.states_not_found_id_array.keys():
+			print("  %-20s: %s" % (state,self.states_not_found_id_array[state]))
+		print("#### States \"Exit\" IDs:")
+		for state in self.states_exit_id_array.keys():
+			print("  %-20s: %s" % (state,self.states_exit_id_array[state]))
 
 
 def import_analyze_file(pathname,filename,mode):

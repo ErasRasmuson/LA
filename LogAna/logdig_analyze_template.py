@@ -227,7 +227,7 @@ def print_sbk_file():
 	global sbk_var_list
 	global sbk_id_counter
 
-	print("print_sbk_file")
+	#print("print_sbk_file")
 	#print("sbk_var_list = %s" % sbk_var_list)
 
 	sbk_id_counter += 1
@@ -248,7 +248,7 @@ def print_sbk_file():
 		else:
 			str_data += str(var_value)
 
-	print("str_data = %s" % str_data)
+	#print("str_data = %s" % str_data)
 
 	f_sbk = open(sbk_file_name, 'a')
 	f_sbk.writelines(str_data + "\n")
