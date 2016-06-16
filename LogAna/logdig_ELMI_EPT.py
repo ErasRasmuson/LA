@@ -7,7 +7,7 @@ VARIABLES = {
 	"SET-LINE-NUMBER":   		"002150",
 	"SET-LINE-DIR":   	 		"2",
 	"SET-MAX-LOGIN-RTAT-TIME": 	"1200",
-	"SET-MAX-RTAT-PASS-TIME":  	"1800",
+	"SET-MAX-RTAT-PASS-TIME":  	"1200",
 	"SET-MAX-PASS-ERR-TIME":   	"120"
 	}
 START = {
@@ -90,7 +90,7 @@ ESU["SEARCH BQD"] = {
 	"log_filename_expr":    "BQD_log_BQD.csv",
 	"log_varnames":         "BQD-BUS-NUMBER,BQD-LINE-NUMBER",
 	"log_timecol_name":     "BQD-MSG-TIMESTAMP",
-	"log_start_time_expr":  "<RTAT-MSG-TIMESTAMP>,0",
+	"log_start_time_expr":  "<RTAT-MSG-TIMESTAMP>,+300",
 	"log_stop_time_expr":   "<RTAT-MSG-TIMESTAMP>,+<SET-MAX-RTAT-PASS-TIME>",
 	
 	"TF_state":    			"SEARCH AD",
@@ -122,6 +122,8 @@ STOP = {
 }
 # ----------------------------- FUNCTION PART -----------------------------
 def start():
+	global counter
+	counter = 0
 	print("  Transition-function: start_function")
 	set_sbk_file("EPT","SBK_ID","RTAT-BUS-NUMBER","RTAT-LINE-NUMBER","RTAT-DIRECTION","RTAT-SIGN-NUMBER",
 				 "RTAT-MSG-TIMESTAMP","RTAT-TAT-TIME","LOG-MSG-TIMESTAMP","RES-BUS-START-TIME",
@@ -132,11 +134,19 @@ def start():
 	copy_variable("RTAT-LINE-NUMBER","SET-LINE-NUMBER")
 	copy_variable("RTAT-DIRECTION","SET-LINE-DIR")
 	copy_variable("RTAT-MSG-TIMESTAMP","SET-START-TIMESTAMP")
-	copy_variable("INT-STOP-TIMESTAMP","SET-STOP-TIMESTAMP")
+	#copy_variable("INT-STOP-TIMESTAMP","SET-STOP-TIMESTAMP")
 
 def RTAT_onentry():
+	global counter
+	counter += 1
 	print("  Onentry-function: RTAT_onentry")
 	copy_variable("INT-START-TIMESTAMP","RTAT-MSG-TIMESTAMP")
+	copy_variable("INT-STOP-TIMESTAMP","SET-STOP-TIMESTAMP")
+	if counter > 2:
+		rtat_timestamp = get_time_variable_value("RTAT-TAT-TIME")
+		stop_timestamp =  rtat_timestamp + datetime.timedelta(seconds=1800)
+		set_variable("INT-STOP-TIMESTAMP",str(stop_timestamp))
+
 def LOGIN_found():
 	print("  Transition-function: Found_LOGIN")
 	copy_variable("INT-BUS-START-SEARCH-TIME","LOG-MSG-TIMESTAMP")

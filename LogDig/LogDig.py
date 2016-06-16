@@ -412,7 +412,6 @@ class ESU:
 			except:
 				print("ESU: ERR: Not found time column")
 				sys.exit()
-			
 
 			lat = self.last_found_new_variables[self.position_lat_variable_name]
 			lon = self.last_found_new_variables[self.position_lon_variable_name]
@@ -421,12 +420,6 @@ class ESU:
 			ana.variables["INT-LATITUDE-NEW"] = lat
 			ana.variables["INT-LONGITUDE-NEW"] = lon
 			ana.variables["INT-LOCAT-TIME-NEW"] = pos_time
-
-			# Kirjoitetaan piste Google Earth kml-tiedostoon
-			#if self.ge_kml_enable == 1:
-			#	coord_list = [[lon,lat]]
-				#write_point_to_kml_file(self.klm_file_path_name,self.position_counter,coord_list,200)	
-			#	write_mark_to_kml_file(self.klm_file_path_name,self.position_counter,coord_list,pos_time,200)
 
 			pos_old_in_area = self.check_position_in_area(ana.variables["INT-LONGITUDE-OLD"],ana.variables["INT-LATITUDE-OLD"])
 			pos_new_in_area = self.check_position_in_area(ana.variables["INT-LONGITUDE-NEW"],ana.variables["INT-LATITUDE-NEW"])
@@ -438,21 +431,23 @@ class ESU:
 				
 				# Tarkistetaan position-datasta ollaanko lähdetty alueelta
 				if pos_old_in_area == True and pos_new_in_area == False:
-					#self.line_found_timestamp = ana.variables["INT-LOCAT-TIME-NEW"]
 					self.line_found_timestamp  = datetime.strptime(ana.variables["INT-LOCAT-TIME-NEW"],"%Y-%m-%d %H:%M:%S")
 					print("Leaving ok: time: %s" % ana.variables["INT-LOCAT-TIME-NEW"])
-					print("POS OLD: %s, %s, %s" % (ana.variables["INT-LATITUDE-OLD"],ana.variables["INT-LONGITUDE-OLD"],ana.variables["INT-LOCAT-TIME-OLD"]))
-					print("POS NEW: %s, %s, %s" % (ana.variables["INT-LATITUDE-NEW"],ana.variables["INT-LONGITUDE-NEW"],ana.variables["INT-LOCAT-TIME-NEW"]))
+					self.print_pos_event_data()
 					return True
 
 				# Jos jo ollaan jo valmiiksi alueen ulkopuolella. 
 				# Periaatteessa tämä virhetapaus, mutta sallitaan koska alkuperäinen lokidata voi olla puutteellinen.
 				# Pitäisi tehdä oma moodi: Outside ?
 				elif pos_old_in_area == False and pos_new_in_area == False:
+
+					ana.variables["INT-LATITUDE-NEW"] = ana.variables["INT-LATITUDE-OLD"] 
+					ana.variables["INT-LONGITUDE-NEW"] = ana.variables["INT-LONGITUDE-OLD"]
+					ana.variables["INT-LOCAT-TIME-NEW"] = ana.variables["INT-LOCAT-TIME-OLD"] 
+
 					self.line_found_timestamp  = datetime.strptime(ana.variables["INT-LOCAT-TIME-NEW"],"%Y-%m-%d %H:%M:%S")
 					print("Leaving: Already outside warning: time: %s" % ana.variables["INT-LOCAT-TIME-NEW"])
-					print("POS OLD: %s, %s, %s" % (ana.variables["INT-LATITUDE-OLD"],ana.variables["INT-LONGITUDE-OLD"],ana.variables["INT-LOCAT-TIME-OLD"]))
-					print("POS NEW: %s, %s, %s" % (ana.variables["INT-LATITUDE-NEW"],ana.variables["INT-LONGITUDE-NEW"],ana.variables["INT-LOCAT-TIME-NEW"]))
+					self.print_pos_event_data()
 					return True
 					
 			elif state_type_param == "Entering":
@@ -460,22 +455,23 @@ class ESU:
 				
 				# Tarkistetaan position-datasta ollaanko tultu alueelle
 				if pos_old_in_area == False and pos_new_in_area == True:
-					#self.line_found_timestamp = ana.variables["INT-LOCAT-TIME-OLD"]
 					self.line_found_timestamp  = datetime.strptime(ana.variables["INT-LOCAT-TIME-OLD"],"%Y-%m-%d %H:%M:%S")
 					print("Entering ok: time: %s" % ana.variables["INT-LOCAT-TIME-OLD"])
-					print("POS OLD: %s, %s, %s" % (ana.variables["INT-LATITUDE-OLD"],ana.variables["INT-LONGITUDE-OLD"],ana.variables["INT-LOCAT-TIME-OLD"]))
-					print("POS NEW: %s, %s, %s" % (ana.variables["INT-LATITUDE-NEW"],ana.variables["INT-LONGITUDE-NEW"],ana.variables["INT-LOCAT-TIME-NEW"]))
+					self.print_pos_event_data()
 					return True
 
 				# Jos ollaan valmiiksi alueen sisällä
 				# Periaatteessa tämä virhetapaus, mutta sallitaan koska alkuperäinen lokidata voi olla puutteellinen.
 				# Pitäisi tehdä oma moodi: Inside ?
 				elif pos_old_in_area == True and pos_new_in_area == True:
-					#self.line_found_timestamp = ana.variables["INT-LOCAT-TIME-OLD"]
+
+					ana.variables["INT-LATITUDE-OLD"] = ana.variables["INT-LATITUDE-NEW"] 
+					ana.variables["INT-LONGITUDE-OLD"] = ana.variables["INT-LONGITUDE-NEW"]
+					ana.variables["INT-LOCAT-TIME-OLD"] = ana.variables["INT-LOCAT-TIME-NEW"] 
+
 					self.line_found_timestamp  = datetime.strptime(ana.variables["INT-LOCAT-TIME-OLD"],"%Y-%m-%d %H:%M:%S")
 					print("Entering: Already inside warning: time: %s" % ana.variables["INT-LOCAT-TIME-OLD"])
-					print("POS OLD: %s, %s, %s" % (ana.variables["INT-LATITUDE-OLD"],ana.variables["INT-LONGITUDE-OLD"],ana.variables["INT-LOCAT-TIME-OLD"]))
-					print("POS NEW: %s, %s, %s" % (ana.variables["INT-LATITUDE-NEW"],ana.variables["INT-LONGITUDE-NEW"],ana.variables["INT-LOCAT-TIME-NEW"]))
+					self.print_pos_event_data()
 					return True				
 			else:
 				print("check_position_event: Unknown")
@@ -490,11 +486,15 @@ class ESU:
 			lon = self.last_found_new_variables[self.position_lon_variable_name]
 			pos_time = self.last_found_new_variables[self.state_log_time_column]
 			coord_list = [[lon,lat]]
-			#write_point_to_kml_file(self.klm_file_path_name,self.position_counter,coord_list,200)	
 			write_mark_to_kml_file(self.klm_file_path_name,self.position_counter,coord_list,pos_time,200)
 
 		return False
 		
+	def print_pos_event_data(self):
+
+		print("POS OLD: %s, %s, %s" % (ana.variables["INT-LATITUDE-OLD"],ana.variables["INT-LONGITUDE-OLD"],ana.variables["INT-LOCAT-TIME-OLD"]))
+		print("POS NEW: %s, %s, %s" % (ana.variables["INT-LATITUDE-NEW"],ana.variables["INT-LONGITUDE-NEW"],ana.variables["INT-LOCAT-TIME-NEW"]))
+
 	def read_input_variables(self,state_log_variables,state_data_variables,state_position_variables):
 	
 		self.log_variables = {}
@@ -1382,7 +1382,7 @@ class BMU:
 			print("BMU: ERR: Not found GUI-line for state: \"%s\"" % (state_name))
 			return
 
-		event_offset = 0
+		event_offset = 1
 		if line_num in self.event_last_stop_timestamp.keys():
 
 			event_offset,last_stop_time = self.event_last_stop_timestamp[line_num]
@@ -1390,8 +1390,8 @@ class BMU:
 
 			if timestamp_start < last_stop_time:
 				event_offset += 1
-				if event_offset > 4:
-					event_offset = 0
+				if event_offset > 10:
+					event_offset = 1
 		
 		self.event_last_stop_timestamp[line_num] = event_offset,timestamp_stop
 

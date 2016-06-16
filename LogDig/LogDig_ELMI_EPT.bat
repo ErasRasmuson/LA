@@ -13,7 +13,7 @@ SET ANALYZE_FILE=logdig_ELMI_EPT
 python %SCRIPT_PATH%LogDig.py ^
 						-date 21.08.2006 ^
 						-start_time 07:00:00 ^
-						-stop_time 08:30:00 ^
+						-stop_time 09:30:00 ^
 						-input_logs_path %LOGS_PATH% ^
 						-input_ssd_path %SSD_PATH% ^
 						-output_files_path %RESULT_PATH% ^

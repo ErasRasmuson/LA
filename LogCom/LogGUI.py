@@ -77,7 +77,7 @@ class GUI(QWidget):
 		qp.drawEllipse(x_new,y_new,w_new,w_new)
 		#qp.drawStaticText(x_new,y_new,QStaticText(text))
 
-	def draw_box(self,qp,mode,x,y,w,h,text):
+	def draw_box(self,qp,mode,x,y,w,h,color,text):
 
 		x_new = int(x * self.zoom_factor) + self.x_offset
 		y_new = int(y * self.zoom_factor) + self.y_offset
@@ -90,7 +90,8 @@ class GUI(QWidget):
 		pen = QPen(Qt.black, 1, Qt.SolidLine)
 		qp.setPen(pen)
 		if mode == "Fill":
-			qp.fillRect(x_new,y_new,w_new,h_new,Qt.yellow)
+			#qp.fillRect(x_new,y_new,w_new,h_new,Qt.yellow)
+			qp.fillRect(x_new,y_new,w_new,h_new,color)
 		else:
 			qp.drawRect(x_new,y_new,w_new,h_new)
 		qp.drawStaticText(x_new,y_new,QStaticText(text))
@@ -613,11 +614,12 @@ class GUI_AnalyzeArea(GUI,QWidget):
 		#y_pos = int(self.line_y1 + tp1 * self.line_zoom)
 		#y_pos2 = int(self.line_y1 + tp2 * self.line_zoom)
 
-		line_width = 5
+		line_width = 4
 		x_pos = self.event_line_x1[int(event_pos)] + event_offset * line_width
 
 		#pen = QPen(QColor(127,0,127,63), line_width, Qt.SolidLine)
-		pen = QPen(color, line_width, Qt.SolidLine)
+		pen = QPen(color, 1, Qt.SolidLine)
+		#pen = QPen(color, line_width, Qt.DashLine)
 		qp.setPen(pen)
 		qp.drawLine(x_pos,y_pos,x_pos,y_pos2)
 
@@ -625,6 +627,10 @@ class GUI_AnalyzeArea(GUI,QWidget):
 		#qp.setPen(pen)
 		#qp.drawText( x_pos,y_pos - 10,str(timestamp1))
 		#qp.drawText( x_pos,y_pos2 - 10,str(timestamp2))
+
+		# Piirretään linjan päätepisteet
+		self.draw_box(qp,"Fill",x_pos-2,y_pos,4,4,color,"")
+		self.draw_box(qp,"Fill",x_pos-2,y_pos2,4,4,color,"")
 
 	def drawTraceLine(self,qp,event_pos1,event_offset_1,timestamp1,event_pos2,event_offset_2,timestamp2,color):
 
