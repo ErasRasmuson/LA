@@ -31,9 +31,7 @@ ESU["SEARCH RTAT"] = {
 ESU["SEARCH LOGIN"] = {
 	"esu_mode":             "SEARCH_EVENT:First",
 	"log_filename_expr":    "Apo_<LOG-BUS-NUMBER>_LOG.csv",
-	"log_varnames":         "LOG-MSG-TYPE=LOGIN,LOG-BUS-NUMBER=<RTAT-BUS-NUMBER>,\
-							LOG-LINE-NUMBER=<SET-LINE-NUMBER>,\
-							LOG-DIRECTION=<RTAT-DIRECTION>",
+	"log_varnames":         "LOG-MSG-TYPE=LOGIN,LOG-BUS-NUMBER=<RTAT-BUS-NUMBER>,LOG-LINE-NUMBER=<SET-LINE-NUMBER>,LOG-DIRECTION=<RTAT-DIRECTION>",
 	"log_timecol_name":     "LOG-MSG-TIMESTAMP",
 	"log_start_time_expr":  "<RTAT-MSG-TIMESTAMP>,-<SET-MAX-LOGIN-RTAT-TIME>",
 	"log_stop_time_expr":   "<RTAT-MSG-TIMESTAMP>,0",

@@ -1261,7 +1261,12 @@ class BMU:
 			sorted_state_list = sorted(self.state_found_metadata.keys(), 
 				key=lambda tila: self.state_found_metadata[tila][0])
 			#print("  Time-order: %s" % sorted_state_list)
-		# Muuten, hakujärjestyksessä
+		# Jos GUI:n mukaisessa järjestyksessä
+		elif self.gui_seq_draw_mode == "order":
+			sorted_state_list = sorted(self.state_found_metadata.keys(), 
+				key=lambda tila: self.state_found_metadata[tila][2])
+			#print("  Time-order: %s" % sorted_state_list)
+		# Muuten, hakujärjestyksessä "search"
 		else:
 			sorted_state_list = sorted(self.state_found_metadata.keys(), 
 				key=lambda tila: self.state_found_metadata[tila][1])
@@ -1269,7 +1274,8 @@ class BMU:
 
 		# Lasketaan sekvenssin tietoja COMPARE-modea varten
 		for state_name in sorted_state_list:
-			state_time,state_order = self.state_found_metadata[state_name]	
+			#state_time,state_order = self.state_found_metadata[state_name]	
+			state_time,state_order,state_gui_order = self.state_found_metadata[state_name]	
 
 			# Referenssiaika talteen COMPARE-modea (kun piirretään tracet päällekkäin) varten
 			# Määritetään mitä saraketta käytetään refenenssinä
@@ -1286,7 +1292,8 @@ class BMU:
 			#state_time = self.state_found_time[state_name]
 
 			# Luetaan tilan metadata: aika ja suoritusjärjestys
-			state_time,state_order = self.state_found_metadata[state_name]
+			#state_time,state_order = self.state_found_metadata[state_name]
+			state_time,state_order,state_gui_order = self.state_found_metadata[state_name]
 
 			#print(" *** drawEventSequence: state_cnt=%s, trace_cnt=%s" % (state_cnt,self.trace_cnt))
 
@@ -1698,7 +1705,9 @@ class BMU:
 
 						self.state_found_serial_metadata_counter[self.current_state_name] = serial_found_cnt
 
-					self.state_found_metadata[self.current_state_name] = time_found,self.state_found_counter
+					#self.state_found_metadata[self.current_state_name] = time_found,self.state_found_counter
+					state_gui_order = self.state_GUI_line_num[self.current_state_name]
+					self.state_found_metadata[self.current_state_name] = time_found,self.state_found_counter,state_gui_order
 
 				# Päivitetään tämänhetken tilanne lopputuloksiin
 				self.update_results(ret,self.current_state_name)
