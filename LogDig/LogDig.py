@@ -194,14 +194,15 @@ class LogFilesData:
 
 			# Haetaan taaksepäin uusi rivin indeksi, jonka aikaleima pienempi, kuin uuden haun alkuaika
 			search_count = 0
-			for index in range(current_line_index,0,-1):
+			for index in range(current_line_index,-1,-1):
 
 				#print(" >>> index = %s" % index)
 				search_count += 1
 				new_line_timestamp = self.logline_times[logfile_name,index]
+				#print(" >>> index = %s, new_line_timestamp = %s" % (index,new_line_timestamp))
 				if new_line_timestamp <= start_time:
 
-					print(" >>>> LogFilesData: search_line_index: cur_ind=%s, cur_time=%s, new_ind=%s, new_time=%s, search_count=%s" % 
+					print(" >>>> LogFilesData: search_line_index: Backward: cur_ind=%s, cur_time=%s, new_ind=%s, new_time=%s, search_count=%s" % 
 							(current_line_index,current_line_timestamp,index,new_line_timestamp,search_count))
 
 					return index
@@ -787,7 +788,7 @@ class ESU:
 		#log_line_index = self.logfiles.get_line_index(logfile_name)
 
 		# Haetaan alkuajan lokirivin indeksi (nopeuttaa hakemista, jos ei tarvii aina lukea kaikkia rivejä lokin alusta)
-		# TÄMÄ EI TOIMI OIKEIN !!!?
+		# TÄMÄ EI TOIMI OIKEIN !!!? KORJATTU ? 21.6.2016 Esa
 		log_line_index = self.logfiles.search_line_index(logfile_name,start_time)
 
 		# Luetaan lokirivit muistista
