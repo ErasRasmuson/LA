@@ -109,6 +109,22 @@ def set_variable(var_name,var_value):
 	except KeyError:
 		print("set_variable: ERR: Setting variable: %s = \"%s\"" % (var_name,var_value))
 
+def set_counter(var_name,int_value):
+
+	try:
+		print("  Set counter: %s = \"%d\"" % (var_name,int_value))
+		variables[var_name] = int_value
+	except KeyError:
+		print("set_counter: ERR: variable: %s = \"%s\"" % (var_name,int_value))
+
+def incr_counter(var_name):
+
+	try:
+		variables[var_name] += 1
+		print("  Incr counter: %s = \"%d\"" % (var_name,variables[var_name]))
+	except KeyError:
+		print("incr_counter: ERR: variable: %s" % (var_name))
+
 def get_variable_str_value(var_name):
 
 	try:
@@ -146,13 +162,15 @@ def compare_variable(result_var_name,var1_name,comp_oper,var2_name):
 			print("compare_variable: ERR: Unknown oper: %s" % comp_oper)
 
 		variables[result_var_name] = res
+		return res
 
 	except KeyError:
 		print("compare_variable: ERR")
+		return 2
 
 def set_datetime_variable(timestamp_var_name,date_var_name,time_var_name):
 
-	print("set_time_variable: timestamp_var_name: %s, date_var_name: %s, time_var_name: %s" % 
+	print("set_datetime_variable: timestamp_var_name: %s, date_var_name: %s, time_var_name: %s" % 
 		(timestamp_var_name,date_var_name,time_var_name))
 
 	try:

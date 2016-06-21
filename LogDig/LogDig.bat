@@ -7,7 +7,7 @@ SET SCRIPT_PATH=%MY_PATH%\LogDig\
 SET LOGS_PATH=%MY_PATH%\LogFile\PreProsessed\TLG_1\
 SET RESULT_PATH=%MY_PATH%\LogRes\TLG_1\
 SET ANALYZE_PATH=%MY_PATH%\LogAna\
-SET ANALYZE_FILE=logdig_TLG_1_new4
+SET ANALYZE_FILE=logdig_TLG_1_new5
 
 python %SCRIPT_PATH%LogDig.py ^
 						-date 24.02.2016 ^
@@ -21,7 +21,7 @@ python %SCRIPT_PATH%LogDig.py ^
 						-analyze_file_mode NEW ^
 						-analyzing_mode NORMAL:0 ^
 						-gui_enable 1 ^
-						-gui_seq_draw_mode "time"
+						-gui_seq_draw_mode "order"
 
 REM						-analyzing_mode COMPARE:3 ^
 REM						-analyzing_mode NORMAL:0 ^
