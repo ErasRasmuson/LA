@@ -46,7 +46,7 @@ class GUI(QWidget):
 		x2_new = int(x2 * self.zoom_factor) + self.x_offset
 		y2_new = int(y2 * self.zoom_factor) + self.y_offset
 
-		pen = QPen(color, 2, Qt.SolidLine)
+		pen = QPen(color, 4, Qt.SolidLine)
 
 		qp.setPen(pen)
 		qp.drawLine(x1_new,y1_new,x2_new,y2_new)
@@ -482,7 +482,8 @@ class GUI_AnalyzeArea(GUI,QWidget):
 			t = self.t1 + timedelta(seconds=sec)
 			#print("t=%s, sec=%s" % (t,sec))
 			y_pos = self.line_y1 + i * timestamp_interval_sec * self.line_zoom
-			pen = QPen(QColor(127,127,127,127), 1, Qt.DashLine)
+			#pen = QPen(QColor(127,127,127,127), 1, Qt.DashLine)
+			pen = QPen(QColor(0,0,0,255), 1, Qt.DashLine)
 			qp.setPen(pen)
 			qp.drawLine(x_pos,y_pos,x_pos2,y_pos)
 			text = "%s, %s" % (t,i)
@@ -614,7 +615,7 @@ class GUI_AnalyzeArea(GUI,QWidget):
 		#y_pos = int(self.line_y1 + tp1 * self.line_zoom)
 		#y_pos2 = int(self.line_y1 + tp2 * self.line_zoom)
 
-		line_width = 4
+		line_width = 6
 		x_pos = self.event_line_x1[int(event_pos)] + event_offset * line_width
 
 		#pen = QPen(QColor(127,0,127,63), line_width, Qt.SolidLine)

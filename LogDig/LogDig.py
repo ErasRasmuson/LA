@@ -1363,7 +1363,9 @@ class BMU:
 										new_event_num,0,new_time,color)
 
 			#else:
-			self.draw_event(state_name,0,new_time,str(new_time),0)
+			
+			#self.draw_event(state_name,0,new_time,str(new_time),0)
+			self.draw_event(state_name,0,new_time,str(self.trace_cnt+1),0)
 
 			old_time = new_time
 			old_event_num = new_event_num
@@ -2102,7 +2104,7 @@ def main():
 		args.state_order = ana.state_order
 
 		app = QApplication(sys.argv)
-		gui2 = GUI_AnalyzeArea(args,"Analyze area",analyze_area_x,analyze_area_y,1100,1000,0,0,1.0,
+		gui2 = GUI_AnalyzeArea(args,"LOGDIG: TRACES OF LOGS",analyze_area_x,analyze_area_y,1100,1000,0,0,1.0,
 				analyze_logs,ana.state_GUI_line_num)
 
 		sys.exit(app.exec_())
