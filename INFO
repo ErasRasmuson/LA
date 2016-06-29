@@ -5,7 +5,8 @@ Esa Heikkinen
 This repository includes the following directories:
 LogDig: - LogDig-tool
         - Windows's bat-scripts
-LogAna: BML (Behavior Mining Language) files for analyzing by LogDig
+LogAna: - BML (Behavior Mining Language) files for analyzing by LogDig
+        - template file for common BML (library) functions
 LogGen: - LogGen-tool for generating ITS (Intelligent Transportation System) type test log and SSD files
         - windows's bat-scipts
 LogCom: Common python classes and functions for tools:
