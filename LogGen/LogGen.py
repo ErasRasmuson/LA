@@ -102,7 +102,7 @@ class TestArea:
 		# Piirret��n koko alue GUI:hin
 		if self.gui_enable == 1:
 			#self.gui.draw_box(self.qp,0,int(area_y),int(area_x),int(area_y),"Area")
-			self.gui.draw_box(self.qp,"",0,0,int(area_x),int(area_y),"Area")
+			self.gui.draw_box(self.qp,"",0,0,int(area_x),int(area_y),Qt.yellow,"Area")
 
 		matrix_x,matrix_y=busstops_matrix.split("x")
 		self.matrix_x=matrix_x
@@ -291,7 +291,7 @@ class TestArea:
 		if self.gui_enable == 1:
 			#draw_text = "Bus: x=%s, y=%s, ind=%s " % (x_right,y_down,index)
 			draw_text = "%s " % (index)
-			self.gui.draw_box(self.qp,"",x_left,y_down,int(busstop_size_x),int(busstop_size_y),draw_text)
+			self.gui.draw_box(self.qp,"",x_left,y_down,int(busstop_size_x),int(busstop_size_y),Qt.yellow,draw_text)
 
 		return [x_right,y_down,x_left,y_top]
 
@@ -822,7 +822,7 @@ class TestArea:
 					if self.source == "Area":
 						if self.gui_info_enable > 0:
 							# Huom! T�m� laittaa nurkkapisteen mukaan, ei keskipisteen !!
-							self.gui.draw_box(self.qp,"Fill",x_bus,y_bus-20,8,8,"I")
+							self.gui.draw_box(self.qp,"Fill",x_bus,y_bus-20,8,8,Qt.yellow,"I")
 						
 
 				# Tarkistetaan miten ennustus on toiminut M-pys�keill�. T�m� vain testi� varten !!
@@ -895,7 +895,7 @@ class TestArea:
 							if self.gui_info_enable > 0:
 								str = "%s, %s, %s, %s\n" % (loop_time,bus,x_bus,y_bus)
 								# Huom! T�m� laittaa nurkkapisteen mukaan, ei keskipisteen !!
-								self.gui.draw_box(self.qp,"Fill",x_bus,y_bus-20,8,8,"O")
+								self.gui.draw_box(self.qp,"Fill",x_bus,y_bus-20,8,8,Qt.yellow,"O")
 						#else:
 						#	self.gui.drawLogEvent(self.qp,1,loop_counter,"boxA")
 							#self.trace_pos_locat_start[bus] = loop_counter
@@ -918,7 +918,7 @@ class TestArea:
 								#self.gui.draw_box(self.qp,"Fill",x_bus,y_bus+10,10,str)
 								if self.gui_info_enable > 0:
 									# Huom! T�m� laittaa nurkkapisteen mukaan, ei keskipisteen !!
-									self.gui.draw_box(self.qp,"Fill",x_bus,y_bus+10,8,8,"R")
+									self.gui.draw_box(self.qp,"Fill",x_bus,y_bus+10,8,8,Qt.yellow,"R")
 							else:
 								self.gui.drawLogEvent(self.qp,1,loop_counter,"boxB")
 								self.trace_pos_locat_start[bus] = loop_counter
