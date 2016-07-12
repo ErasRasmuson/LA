@@ -37,4 +37,3 @@ PROFES examples:
 1) Create the test logs by script: LA\LogGen\LogGen_PROFES.bat
 2) Run the PROFES A example by script: LA\LogDig\LogDig_PROFES_A.bat
 3) Run the PROFES B example by script: LA\LogDig\LogDig_PROFES_B.bat
-
