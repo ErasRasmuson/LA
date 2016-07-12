@@ -19,4 +19,18 @@ LogRes: Results of LogDig-tool (for example SBK-file)
 SSDPrep: SSDPrep-tool (for pre-processing of Systems Specific Data)
 SSDFile: No exist yet. Some SSD files are in LogFile-directory.
 
-Tools are done by Python 3 and pyqt4 (GUI). 
+Tools are made by Python 3 and pyqt4 (GUI). These must be installed before use.
+
+In windows all files and tools are located in the default path "D:\MyProjects\LA\".
+If you use different path, change the following line in every bat-script:
+"SET MY_PATH=D:\MyProjects\LA"
+
+---------------
+-- 12.7.2016 -- 
+Simple example:
+1) Run example by script: LA\LogDig\LogDig_Simple.bat
+
+PROFES examples:
+1) Create the test logs by script: LA\LogGen\LogGen_PROFES.bat
+2) Run the PROFES A example by script: LA\LogDig\LogDig_PROFES_A.bat
+3) Run the PROFES B example by script: LA\LogDig\LogDig_PROFES_B.bat
