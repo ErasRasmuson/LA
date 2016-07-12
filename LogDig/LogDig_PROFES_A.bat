@@ -12,9 +12,9 @@ SET ANALYZE_FILE=logdig_PROFES_A
 python %SCRIPT_PATH%LogDig.py ^
 						-date 14.04.2016 ^
 						-start_time 07:00:00 ^
-						-stop_time 09:00:00 ^
+						-stop_time 11:00:00 ^
 						-input_logs_path %LOGS_PATH% ^
-						-input_ssd_path %SSD_PATH% ^
+						-input_ssd_path %LOGS_PATH% ^
 						-output_files_path %RESULT_PATH% ^
 						-analyze_file_path %ANALYZE_PATH% ^
 						-analyze_file %ANALYZE_FILE% ^

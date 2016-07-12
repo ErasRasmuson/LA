@@ -133,7 +133,7 @@ def start():
 	flip_flop = 0
 
 	print("  Transition-function: start_function")
-	set_sbk_file("IECON_B",
+	set_sbk_file("PROFES_B",
 				 "LOG-BUS","SET-LINE-NUMBER",
 				 "RES-BUS-START-TIME","RES-BUSSTOP-PASS-TIME",
 				 "RES-TIME-DIFF","RES-TIME-DIFF-SEC",
