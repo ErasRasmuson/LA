@@ -32,7 +32,7 @@ ESU["LOGIN"] = {
 	"log_varnames":         "LOG-TYPE=LOGIN",
 	"log_timecol_name":     "LOG-TIME",
 	"log_start_time_expr":  "<INT-START-TIMESTAMP>,+1",
-	"log_stop_time_expr":   "<INT-START-TIMESTAMP>,+2000",
+	"log_stop_time_expr":   "<INT-START-TIMESTAMP>,+2700",
 	
 	"TF_state":    "LOGOUT",
 	"TF_func":     "LOGIN_found_function",
@@ -46,7 +46,7 @@ ESU["LOGOUT"] = {
 	"log_varnames":         "LOG-TYPE=LOGOUT,LOG-BUS",
 	"log_timecol_name":     "LOG-TIME",
 	"log_start_time_expr":  "<LOG-TIME>,+1",
-	"log_stop_time_expr":   "<LOG-TIME>,+2000",
+	"log_stop_time_expr":   "<LOG-TIME>,+2700",
 	
 	"TF_state":    "LOGIN",
 	"TF_func":     "LOGOUT_found_function",

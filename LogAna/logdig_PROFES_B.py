@@ -113,7 +113,7 @@ ESU["LOGOUT"] = {
 	"log_varnames":         "LOG-TYPE=LOGOUT,LOG-LINE,LOG-BUS",
 	"log_timecol_name":     "LOG-TIME",
 	"log_start_time_expr":  "<RES-BUSSTOP-PASS-TIME>,0",
-	"log_stop_time_expr":   "<RES-BUSSTOP-PASS-TIME>,1200",
+	"log_stop_time_expr":   "<RES-BUSSTOP-PASS-TIME>,1800",
 	
 	"TF_state":    "STOP",
 	"TF_func":     "LOGOUT_found_function",

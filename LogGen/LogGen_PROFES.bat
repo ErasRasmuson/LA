@@ -8,7 +8,7 @@ SET OUTPUT_PATH=%MY_PATH%\LogFile\PreProsessed\
 python %SCRIPT_PATH%LogGen.py ^
 					-log_name "LogGen_PROFES" ^
 					-event_versatility 3 ^
-					-traces_max 200 ^
+					-traces_max 100 ^
 					-area_size  "1500x1000" ^
 					-area_pixel_size  "10" ^
 					-date  		 "14.04.2016" ^
@@ -21,7 +21,7 @@ python %SCRIPT_PATH%LogGen.py ^
 					-busstop_size "40x40" ^
 					-bus_msg_interval 30 ^
 					-bus_speed 50 ^
-					-bus_speed_variance 25 ^
+					-bus_speed_variance 35 ^
 					-bus_amount 5 ^
 					-line_route "L001:red:0:A1,M1,M3,B1" ^
 					-line_route "L002:green:6:A2,M2,M3,M6,B2" ^
