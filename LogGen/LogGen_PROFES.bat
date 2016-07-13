@@ -34,3 +34,4 @@ python %SCRIPT_PATH%LogGen.py ^
 					-gui_enable 1 ^
 					-gui_zoom 0.75 ^
 					-gui_line_zoom 6
+
