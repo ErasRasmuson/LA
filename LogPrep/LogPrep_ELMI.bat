@@ -1,10 +1,10 @@
 
 ECHO OFF
 
-SET MY_PATH=D:\MyProjects\LA
+SET MY_PATH=D:\Projekti\Koodit\LA
 SET SCRIPT_PATH=%MY_PATH%\LogPrep\
 
-SET INPUT_PATH=D:\opiskelu\VANHAT\vanhat\ELMI\Lokit\
+SET INPUT_PATH=D:\VANHAT\vanhat\ELMI\Lokit\
 REM SET OUTPUT_PATH=D:\opiskelu\Skriptit\logs_new\
 
 SET LOG_GROUP_NAME=ELMI
