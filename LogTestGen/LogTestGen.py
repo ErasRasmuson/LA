@@ -31,6 +31,7 @@ from TestGen_BML import *
 g_version = "$Id$"
 generate_counter = 0
 
+
 #******************************************************************************
 #
 #	CLASS:	TestModel
@@ -40,6 +41,16 @@ class TestModel:
 
 	def __init__(self,args):
 		print("TestModel")
+
+		# Generoitujen aikaleimojen alkukohta. Kovakoodattu tähän. Voi joskus muttaa parametreiksi ? 9.3.2018 Esa
+		self.log_start_date = "09.03.2018" 
+		self.log_start_time = "10:00:00"
+		# Muutetaan ajat oikeaan muotoon
+		days,months,years=self.log_start_date.split(".")
+		print("log start date = %s %s %s" % (days,months,years))
+		hours,minutes,seconds=self.log_start_time.split(":")
+		print("log start time = %s %s %s" % (hours,minutes,seconds))
+		self.log_start_datetime = datetime(int(years),int(months),int(days),int(hours),int(minutes),int(seconds))
 
 		self.branch_complexity_level_params = {}
 		self.trace_size_variation_level_params = {}
@@ -398,7 +409,13 @@ class TestModel:
 										self.event_table[x,y].target_ids[i].id)
 						targets += str
 
-					line = "%s,%s.%s,%s,%s,%s,%s\n" % (time,track,number,sources,targets,attr,data)
+					# Lasketaan lokin aikaleima "aika-indeksista". 9.3.2018 Esa
+					log_timestamp = self.log_start_datetime + timedelta(seconds=time)
+					log_timestamp_str = log_timestamp.strftime("%Y-%m-%d %H:%M:%S")
+					line = "%s,%s.%s,%s,%s,%s,%s\n" % (log_timestamp_str,track,number,sources,targets,attr,data)
+					#print("log_timestamp_str: %s"%log_timestamp_str)
+
+					#line = "%s,%s.%s,%s,%s,%s,%s\n" % (time,track,number,sources,targets,attr,data)
 					fw[x].write(line)
 
 				except:

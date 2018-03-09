@@ -1,7 +1,8 @@
 #!/bin/bash
 
 echo "Start"
-MY_PATH="/Users/EsaHeikkinen/MyProjects/LA"
+#MY_PATH="/Users/EsaHeikkinen/MyProjects/LA"
+MY_PATH="/home/esa/projects/LA"
 
 SCRIPT_PATH=${MY_PATH}"/LogGen/"
 OUTPUT_PATH=${MY_PATH}"/LogFile/"
