@@ -1,5 +1,5 @@
 INFO
-12.7.2016
+20.3.2018
 Esa Heikkinen
 eras.rasmuson <at> gmail.com
 esa.heikkinen <at> student.tut.fi
@@ -7,12 +7,15 @@ esa.heikkinen <at> student.tut.fi
 This repository includes the following directories:
 LogDig: - LogDig-tool
         - Windows's bat-scripts
+        - Linux's sh-script
 LogAna: - BML (Behavior Mining Language) files for analyzing by LogDig
         - template file for common BML (library) functions
 LogGen: - LogGen-tool for generating ITS (Intelligent Transportation System) type test log and SSD files
         - windows's bat-scipts
+LogTestGen: - LogTestGen-tool for generating DAG-type test logs
+            - LogAnalGen-tool for generating analysis test cases by specified language, like BML (not ready yet !)
 LogCom: Common python classes and functions for tools:
-        - GUI (pyqt4)
+        - GUI (pyqt5)
         - Google Earth kml-files
 LogFile: Place for input logfiles. All necessary files are not included, because of big size.
 LogPrep: LogPrep-tool (for pre-processing or preparation of log files)
@@ -20,7 +23,10 @@ LogRes: Results of LogDig-tool (for example SBK-file)
 SSDPrep: SSDPrep-tool (for pre-processing of Systems Specific Data)
 SSDFile: No exist yet. Some SSD files are in LogFile-directory.
 
-Tools are made by Python 3 and pyqt4 (GUI). These must be installed before use.
+Tools are made by Python 3 and pyqt5 (GUI). These must be installed before use.
+Also configparser-module are needed:
+- pip install configparser
+- pip3 install pyqt5
 
 In windows all files and tools are located in the default path "D:\MyProjects\LA\".
 If you use different path, change the following line in every bat-script:
