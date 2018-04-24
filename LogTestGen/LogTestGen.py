@@ -136,7 +136,6 @@ class TestModel:
 		# Tulostetaan lokit trace patternin perusteella
 		self.write_trace_pattern_logs(tble_max,tbnu_max,tle_max,tnu_max,btre_max,"gen")
 
-
 	def generate_analyzing_test_cases(self,matrix_x,matrix_y,btre_min,btre_max,bmer_min,bmer_max,bctype,
 						 tble_min,tble_max,tbnu_min,tbnu_max,tle_min,tle_max,tnu_min,tnu_max,
 					     event_table):
@@ -369,8 +368,8 @@ class TestModel:
 		fw={}
 
 		print("Inits logs and writes headers")
-		# Lokitiedostot ja niiden headerit
-		for x in range(x_max):
+		# Lokitiedostot ja niiden headerit. Myös yksi tiedosto, jossa kaikki.
+		for x in range(x_max+1):
 
 			# Alustetaan muut lokitiedostot
 			log_file_name = "Log_%s_%s_track_%s" % (self.test_name,file_info,x)
@@ -418,11 +417,18 @@ class TestModel:
 					#line = "%s,%s.%s,%s,%s,%s,%s\n" % (time,track,number,sources,targets,attr,data)
 					fw[x].write(line)
 
+					# Kirjoitetaan myös kaikki yhteen tiedostoon. Lisätty 24.4.2018 Esa
+					# Huom! Ei ole täysin aikajärjestyksessä !!
+					fw[x_max].write(line)
+
 				except:
 					print("Not found: x=%s ,y=%s" % (x,y))
 					continue	
 
-			fw[x].close()	
+			fw[x].close()
+
+		fw[x_max].close()
+
 
 	def make_dir_if_no_exist(self,file_path_name):
 		# Python3
