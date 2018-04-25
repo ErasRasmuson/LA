@@ -31,12 +31,10 @@ object CepIPP {
     // operate in Event-time
     env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
 
-    // get the taxi ride data stream, in order
     val events = env.addSource(new TestDataSource(input, speed))
 
     println("CepTestData pattern ...")
 
-    // A complete taxi ride has a START event followed by an END event
     val eventPattern = Pattern
       .begin[TestData]("start").where(_.eventIdStr.equals("5.1"))
       .followedBy("end").where(_.eventIdStr.equals("5.4"))
@@ -45,20 +43,15 @@ object CepIPP {
 
     println("CepTestData pattern stream ...")
 
-    // We want to find rides that have NOT been completed within 120 minutes
     val pattern: PatternStream[TestData] = CEP.pattern[TestData](events, eventPattern)
 
-
-    // side output tag for rides that time out
     val timedoutTag = new OutputTag[TestData]("timedout")
 
-    // collect rides that timeout
     val timeoutFunction = (map: Map[String, Iterable[TestData]], timestamp: Long, out: Collector[TestData]) => {
       val rideStarted = map.get("start").get.head
       out.collect(rideStarted)
     }
 
-    // ignore rides that complete on time
     val selectFunction = (map: Map[String, Iterable[TestData]], collector: Collector[TestData]) => {
         val startEvent = map.get("start").get.head
         val endEvent = map.get("end").get.head
