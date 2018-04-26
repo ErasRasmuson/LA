@@ -26,7 +26,7 @@ object Table {
 
     val csvtable = CsvTableSource
       .builder
-      .path("/home/esa/projects/LA/LogFile/PreProsessed/EX1/Log_EX1_gen_track_5_mod.csv")
+      .path("/home/esa/projects/LA/LogFile/PreProsessed/EX1/Log_EX1_gen_track_6.csv")
       .ignoreFirstLine
       .fieldDelimiter(",")
       .field("time", Types.SQL_TIMESTAMP)
@@ -46,7 +46,7 @@ object Table {
 
     val tableTest = tableEnv
       .scan("test")
-      .filter('time > "2018-03-06 10:55:00".toTimestamp)
+      .filter('time > "2018-03-09 10:00:50".toTimestamp)
       .select("time,id,sources,targets,data")
 
     println("toAppendStream ...")
