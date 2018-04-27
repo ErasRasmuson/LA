@@ -32,14 +32,14 @@ public class TestData implements Comparable<TestData> {
 	public TestData() {}
 
 	public TestData(DateTime eventTime,
-	//public TestData(long eventTime,
-					//float eventId,
 					int eventId,
 					String eventIdStr,
 					String sources,
 					String targets,
 					String attr,
 					String data,
+					String evId1,
+					String targetEvId,
 					boolean testFlag)
 	{
 		this.eventTime = eventTime;
@@ -49,18 +49,20 @@ public class TestData implements Comparable<TestData> {
 		this.targets = targets;
 		this.attr = attr;
 		this.data = data;
+		this.data = evId1;
+		this.data = targetEvId;
 		this.testFlag = testFlag;
 	}
 
 	public DateTime eventTime;
-	//public long eventTime;
-	//public float eventId;
 	public int eventId;
 	public String eventIdStr;
 	public String sources;
 	public String targets;
 	public String attr;
 	public String data;
+	public String evId1="";
+	public String targetEvId="";
 	public boolean testFlag = true;
 
 	public String toString() {
