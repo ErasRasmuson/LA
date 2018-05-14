@@ -6,6 +6,8 @@ import org.apache.flink.api.scala.{DataSet, ExecutionEnvironment}
 import org.apache.flink.table.api.TableEnvironment
 import org.apache.flink.api.scala._
 import org.apache.flink.core.fs.FileSystem.WriteMode
+import org.apache.flink.table.sinks.{CsvTableSink, TableSink}
+import org.apache.flink.table.sources.CsvTableSource
 
 object BatchTable {
 
@@ -35,7 +37,7 @@ object BatchTable {
 
     //val csvInput: DataSet[(String,String,String,String,String,String)] = env.readCsvFile[(String,String,String,String,String,String)]("/home/esa/projects/LA/LogFile/PreProsessed/EX1/Log_EX1_gen_track_6.csv",
     val csvInput = env.readCsvFile[(String,String,String,String,String,String)]("/home/esa/projects/LA/LogFile/PreProsessed/EX1/Log_EX1_gen_track_6.csv",
-      ignoreFirstLine=true).map{ m => (m._1,m._2,m._3,m._4,m._5,m._6)}
+      ignoreFirstLine=false).map{ m => (m._1,m._2,m._3,m._4,m._5,m._6)}
 
 
     //val csvInput = env.readCsvFile("/home/esa/projects/LA/LogFile/PreProsessed/EX1/Log_EX1_gen_track_6.csv",
@@ -47,23 +49,37 @@ object BatchTable {
 
     val tableEnv = TableEnvironment.getTableEnvironment(env)
 
-    tableEnv.registerDataSet("mytable",csvInput)
-    val result = tableEnv.sqlQuery("SELECT * FROM mytable")
+    //val csvSource = new CsvTableSource("/home/esa/projects/LA/LogFile/PreProsessed/EX1/Log_EX1_gen_track_6.csv")
+    //tableEnv.registerTableSource("CsvTable",csvSource)
 
-    result.printSchema()
+    //tableEnv.registerDataSet("mytable",csvInput,'time,'id,'sources,'targets,'attr,'data)
+    tableEnv.registerDataSet("mytable",csvInput)
+
+    //val result = tableEnv.sqlQuery("SELECT * FROM mytable")
+    val result = tableEnv.sqlQuery(
+      """
+        |SELECT *
+        |FROM mytable
+      """.stripMargin)
+
+    println("result: " + result.toString())
+    //result.printSchema()
+
+    //val sink = new CsvTableSink("/home/esa/projects/results/result.csv",fieldDelim=",")
+    //result.writeToSink(sink)
 
     if (params.has("output")) {
       csvInput.writeAsCsv(params.get("output"), "\n", " ")
-      env.execute("Scala WordCount Example")
+      env.execute("Scala BatchTable")
     } else {
       println("csvInput: ")
       csvInput.print()
       println("lines2: ")
       lines2.print()
 
-      csvInput.writeAsCsv("file:///home/esa/projects/csvinput_test", "\n", ",", WriteMode.OVERWRITE)
-      lines2.writeAsText("file:///home/esa/projects/lines2_test", WriteMode.OVERWRITE)
-      env.execute("Scala WordCount Example")
+      csvInput.writeAsCsv("file:///home/esa/projects/results/csvinput_test.csv", "\n", ",", WriteMode.OVERWRITE)
+      lines2.writeAsText("file:///home/esa/projects/results/lines2_test.csv", WriteMode.OVERWRITE)
+      env.execute("Scala BatchTable")
 
     }
 
