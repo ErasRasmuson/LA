@@ -4,7 +4,7 @@
 HEADER:     Taxi_LongRides.py
 
 AUTHOR:     Esa Heikkinen
-DATE:       25.06.2018
+DATE:       26.06.2018
 DOCUMENT:   -
 VERSION:    "$Id$"
 REFERENCES: -
@@ -16,18 +16,22 @@ from logdig_analyze_template import *
 
 # ----------------------------- DATA-DRIVEN PART -----------------------------
 VARIABLES = {
-	"CASENAME":    		"CEL"
+	"STARTTIME-DATE":   "2013-01-01",
+	"STARTTIME-TIME": 	"00:00:00",
+	"STOPTIME-DATE":	"2013-01-30",
+	"STOPTIME-TIME": 	"23:59:59",
+	"SET-RIDEID": "934753"
 	}
 START = {
-	"state":   "START",
+	"state":   "BEGIN",
 	"func":   "start"
 	}
-ESU["START"] = {
+ESU["BEGIN"] = {
 	"esu_mode":             "SEARCH_EVENT:First",
-	"log_filename_expr":    "TaxiRide_<RIDEID>.txt",
-	"log_varnames":         "isStart==START",
+	"log_filename_expr":    "TaxiRides_small.csv",
+	"log_varnames":         "isStart=START,rideId=<SET-RIDEID>",
 	"log_timecol_name":     "startTime",
-	"log_start_time_expr":  "<STARTTIME>,+1",
+	"log_start_time_expr":  "<STARTTIME>,1",
 	"log_stop_time_expr":   "<STOPTIME>,0",
 
 	"TF_state":    "END",
@@ -40,16 +44,16 @@ ESU["START"] = {
 }
 ESU["END"] = {
 	"esu_mode":             "SEARCH_EVENT:First",
-	"log_filename_expr":    "TaxiRide_<RIDEID>.csv",
-	"log_varnames":         "isStart==END",
-	"log_timecol_name":     "endTime",
-	"log_start_time_expr":  "<startTime>,0",
+	"log_filename_expr":    "TaxiRides_small.csv",
+	"log_varnames":         "isStart=END,rideId=<SET-RIDEID>",
+	"log_timecol_name":     "startTime",
+	"log_start_time_expr":  "<startTime>,1",
 	"log_stop_time_expr":   "<startTime>,7200",
 
-	"TF_state":    "BEGIN",
+	"TF_state":    "STOP",
 	"TF_func":     "found_end",
 	"TN_state":    "STOP",
-	"TN_func":     "exit_normal",
+	"TN_func":     "not_found_end",
 	"TE_state":    "STOP",
 	"TE_func":     "exit_error",
 	"GUI_line_num":	"1"
@@ -60,28 +64,18 @@ STOP = {
 
 # ----------------------------- FUNCTION PART -----------------------------
 def start():
-	set_variable("EV-PAR","B")
-	set_datetime_variable("STARTTIME","STARTTIME-DATE","STARTTIME-ORIG")
-	set_datetime_variable("STOPTIME","STARTTIME-DATE","STOPTIME-ORIG")
-	set_sbk_file("COUNTER-OK","COUNTER-ERROR")
-	set_counter("COUNTER-OK",0)
-	set_counter("COUNTER-ERROR",0)
+	set_datetime_variable("STARTTIME","STARTTIME-DATE","STARTTIME-TIME")
+	set_datetime_variable("STOPTIME","STOPTIME-DATE","STOPTIME-TIME")
+	set_sbk_file("SBK_ID","SET-RIDEID","startTime","endTime")
 
 def found_begin():
-	copy_variable("EV-START","EV-TIME")
-	set_variable("EV-PAR","E")
+	print("found_begin")
 
 def found_end():
-	set_variable("EV-PAR","B")
-	copy_variable("EV-STOP","EV-TIME")
-	set_variable("EV-STATUS","OK")
-	calc_time_diff("TIME-DIFF","EV-LEN","EV-STOP","EV-START")
-	if compare_variable("ERR-TIME","EV-LEN",">","EVENT-MAX-LEN") == 1:
-		set_variable("EV-STATUS","ERR")
-		incr_counter("COUNTER-ERROR")
-	else:
-		incr_counter("COUNTER-OK")
-	copy_variable("STARTTIME","EV-START")
+	print("found_end")
+
+def not_found_end():
+	print("not_found_end")
 	print_sbk_file()
 
 def exit_normal():
