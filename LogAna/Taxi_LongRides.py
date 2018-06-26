@@ -19,8 +19,7 @@ VARIABLES = {
 	"STARTTIME-DATE":   "2013-01-01",
 	"STARTTIME-TIME": 	"00:00:00",
 	"STOPTIME-DATE":	"2013-01-30",
-	"STOPTIME-TIME": 	"23:59:59",
-	"SET-RIDEID": "934753"
+	"STOPTIME-TIME": 	"23:59:59"
 	}
 START = {
 	"state":   "BEGIN",
@@ -29,9 +28,9 @@ START = {
 ESU["BEGIN"] = {
 	"esu_mode":             "SEARCH_EVENT:First",
 	"log_filename_expr":    "TaxiRides_small.csv",
-	"log_varnames":         "isStart=START,rideId=<SET-RIDEID>",
+	"log_varnames":         "isStart=START",
 	"log_timecol_name":     "startTime",
-	"log_start_time_expr":  "<STARTTIME>,1",
+	"log_start_time_expr":  "<STARTTIME-BEGIN>,1",
 	"log_stop_time_expr":   "<STOPTIME>,0",
 
 	"TF_state":    "END",
@@ -50,9 +49,9 @@ ESU["END"] = {
 	"log_start_time_expr":  "<startTime>,1",
 	"log_stop_time_expr":   "<startTime>,7200",
 
-	"TF_state":    "STOP",
+	"TF_state":    "BEGIN",
 	"TF_func":     "found_end",
-	"TN_state":    "STOP",
+	"TN_state":    "BEGIN",
 	"TN_func":     "not_found_end",
 	"TE_state":    "STOP",
 	"TE_func":     "exit_error",
@@ -66,16 +65,20 @@ STOP = {
 def start():
 	set_datetime_variable("STARTTIME","STARTTIME-DATE","STARTTIME-TIME")
 	set_datetime_variable("STOPTIME","STOPTIME-DATE","STOPTIME-TIME")
-	set_sbk_file("SBK_ID","SET-RIDEID","startTime","endTime")
+	set_sbk_file("TaxiRide","SET-RIDEID","startTime","endTime")
+	copy_variable("STARTTIME-BEGIN","STARTTIME")
 
 def found_begin():
 	print("found_begin")
+	copy_variable("SET-RIDEID","rideId")
+	copy_variable("STARTTIME-BEGIN","startTime")
 
 def found_end():
 	print("found_end")
 
 def not_found_end():
 	print("not_found_end")
+	copy_variable("STARTTIME-BEGIN","startTime")
 	print_sbk_file()
 
 def exit_normal():
