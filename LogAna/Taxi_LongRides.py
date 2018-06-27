@@ -30,7 +30,7 @@ ESU["BEGIN"] = {
 	"log_filename_expr":    "TaxiRides_small.csv",
 	"log_varnames":         "isStart=START",
 	"log_timecol_name":     "startTime",
-	"log_start_time_expr":  "<STARTTIME-BEGIN>,1",
+	"log_start_time_expr":  "<STARTTIME-BEGIN>,0",
 	"log_stop_time_expr":   "<STOPTIME>,0",
 
 	"TF_state":    "END",

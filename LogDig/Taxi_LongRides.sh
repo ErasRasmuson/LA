@@ -20,7 +20,7 @@ python ${SCRIPT_PATH}LogDig.py \
 		-analyze_file $ANALYZE_FILE \
 		-analyze_file_mode NEW \
 		-analyzing_mode NORMAL:0 \
-		-gui_enable 1 \
+		-gui_enable 0 \
 		-gui_seq_draw_mode "time"
 
 #		-analyzing_mode COMPARE:3 ^

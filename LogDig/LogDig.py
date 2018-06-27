@@ -787,9 +787,35 @@ class ESU:
 		# Haetaan lokitiedosto luvun alkurivi (indeksi)
 		#log_line_index = self.logfiles.get_line_index(logfile_name)
 
-		# Haetaan alkuajan lokirivin indeksi (nopeuttaa hakemista, jos ei tarvii aina lukea kaikkia rivejÃ¤ lokin alusta)
-		# TÃ„MÃ„ EI TOIMI OIKEIN !!!? KORJATTU ? 21.6.2016 Esa
-		log_line_index = self.logfiles.search_line_index(logfile_name,start_time)
+		# Esa 27.6.2018
+		var_last_start_time_name = ("ESU-%s-LAST-STARTTIME" % self.name)
+		var_last_line_index_name = ("ESU-%s-LAST-LINEINDEX" % self.name)
+		log_line_index = 0
+		print(" --- ESU: Last state var names: %s, %s" % (var_last_start_time_name,var_last_line_index_name))
+		# Jos edellinen saman tilan haun aloitusaika oli sama,
+		# käytetään myös edellisen lokin rivin indeksia.
+		# Tarvitaan, koska joskus lokeissa voi olla sama aikaleima peräkkäin usealla rivillä.
+		same_start_time = False
+		try:
+			var_last_start_time_value = ana.variables[var_last_start_time_name]
+			print(" --- ESU: %s: %s" % (var_last_start_time_name,var_last_start_time_value))
+			if var_last_start_time_value == start_time:
+				log_line_index = ana.variables[var_last_line_index_name]
+				print(" --- ESU: Same start time: %s: %s" % (var_last_line_index_name,log_line_index))
+				# Seuraava rivi (jossa sama aikaleima)
+				log_line_index += 1
+				same_start_time = True
+		except KeyError:
+			print(" --- ESU: Not found: %s" % (var_last_start_time_name))
+
+		if same_start_time == False:
+			# Haetaan alkuajan lokirivin indeksi (nopeuttaa hakemista, jos ei tarvii aina lukea kaikkia rivejÃ¤ lokin alusta)
+			# TÃ„MÃ„ EI TOIMI OIKEIN !!!? KORJATTU ? 21.6.2016 Esa
+			log_line_index = self.logfiles.search_line_index(logfile_name,start_time)
+
+		# Talletaan tilan haun aloituksen aika ja lokin rivin indeksi myöhempää käyttöä varten. Esa 27.6.2018
+		ana.variables[var_last_start_time_name] = start_time
+		ana.variables[var_last_line_index_name] = log_line_index
 
 		# Luetaan lokirivit muistista
 		self.log_lines = self.logfiles.get_lines(logfile_name)
