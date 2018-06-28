@@ -75,6 +75,11 @@ class LogFilesData:
 				file_line_counter = 0
 				line_counter = 0
 				self.log_data_line_counter[logfile_name] = 0
+
+				# Esa 28.6.2018
+				line_timestamp_old = 0
+				same_time_counter = 0
+
 				# KÃ¤ydÃ¤Ã¤n rivit lÃ¤pi
 				for line in log_lines:
 
@@ -117,9 +122,20 @@ class LogFilesData:
 						timestamp_str = line_list[time_column_index]
 						line_timestamp = datetime.strptime(timestamp_str,"%Y-%m-%d %H:%M:%S")
 
+						# Lasketaan samat perakkaiset aikaleimat. Esa 28.6.2018
+						if line_timestamp_old != line_timestamp:
+							same_time_counter = 0
+						else:
+							same_time_counter += 1
+						line_timestamp_old = line_timestamp
+
 						# Otetaan rivien aikaleimat talteen. Vai pitÃ¤isikÃ¶ kÃ¤yttÃ¤Ã¤ alkup. tiedoston logfile_lines-taulukkoa ?
-						self.logline_times[logfile_name,self.log_data_line_counter[logfile_name]] = line_timestamp
-						#print(" >>>> cnt = %s, time = %s" % (self.log_data_line_counter[logfile_name],line_timestamp))
+						#self.logline_times[logfile_name,self.log_data_line_counter[logfile_name]] = line_timestamp
+
+						# Esa 28.6.2018
+						self.logline_times[logfile_name,self.log_data_line_counter[logfile_name]] = (line_timestamp,same_time_counter)
+						#print(" >>>> cnt = %s, time = %s, cnt = %d" % (self.log_data_line_counter[logfile_name],line_timestamp,same_time_counter))
+
 						self.log_data_line_counter[logfile_name] += 1
 
 						self.logfile_lines[logfile_name].append(line_list)
@@ -180,7 +196,9 @@ class LogFilesData:
 			return 0
 
 		try:
-			current_line_timestamp = self.logline_times[logfile_name,current_line_index]
+			#current_line_timestamp = self.logline_times[logfile_name,current_line_index]
+			# Esa 28.6.2018
+			(current_line_timestamp,same_time_counter) = self.logline_times[logfile_name,current_line_index]
 		except:
 			print(" >>>> LogFilesData: ERR: Not found timestamp for: %s and index: %s" % (logfile_name,current_line_index))
 			return 0
@@ -198,12 +216,16 @@ class LogFilesData:
 
 				#print(" >>> index = %s" % index)
 				search_count += 1
-				new_line_timestamp = self.logline_times[logfile_name,index]
-				#print(" >>> index = %s, new_line_timestamp = %s" % (index,new_line_timestamp))
-				if new_line_timestamp <= start_time:
 
-					print(" >>>> LogFilesData: search_line_index: Backward: cur_ind=%s, cur_time=%s, new_ind=%s, new_time=%s, search_count=%s" % 
-							(current_line_index,current_line_timestamp,index,new_line_timestamp,search_count))
+				#new_line_timestamp = self.logline_times[logfile_name,index]
+				# Esa 28.6.2018
+				(new_line_timestamp,same_time_counter) = self.logline_times[logfile_name,index]
+				#print(" >>> index = %s, new_line_timestamp = %s, same_time_cnt = %d" % (index,new_line_timestamp,same_time_counter))
+				#if new_line_timestamp <= start_time:
+				if new_line_timestamp <= start_time and same_time_counter == 0:
+
+					print(" >>>> LogFilesData: search_line_index: Backward: cur_ind=%s, cur_time=%s, new_ind=%s, new_time=%s, same_time_cnt=%s, search_count=%s" %
+							(current_line_index,current_line_timestamp,index,new_line_timestamp,same_time_counter,search_count))
 
 					return index
 
@@ -792,21 +814,26 @@ class ESU:
 		var_last_line_index_name = ("ESU-%s-LAST-LINEINDEX" % self.name)
 		log_line_index = 0
 		print(" --- ESU: Last state var names: %s, %s" % (var_last_start_time_name,var_last_line_index_name))
-		# Jos edellinen saman tilan haun aloitusaika oli sama,
-		# käytetään myös edellisen lokin rivin indeksia.
-		# Tarvitaan, koska joskus lokeissa voi olla sama aikaleima peräkkäin usealla rivillä.
+
+		# Esa 28.6.2018
 		same_start_time = False
-		try:
-			var_last_start_time_value = ana.variables[var_last_start_time_name]
-			print(" --- ESU: %s: %s" % (var_last_start_time_name,var_last_start_time_value))
-			if var_last_start_time_value == start_time:
-				log_line_index = ana.variables[var_last_line_index_name]
-				print(" --- ESU: Same start time: %s: %s" % (var_last_line_index_name,log_line_index))
-				# Seuraava rivi (jossa sama aikaleima)
-				log_line_index += 1
-				same_start_time = True
-		except KeyError:
-			print(" --- ESU: Not found: %s" % (var_last_start_time_name))
+		if state_type_param2 == "NextRow":
+			print(" --- ESU: Uses NextRow")
+
+			# Jos edellinen saman tilan haun aloitusaika oli sama,
+			# käytetään myös edellisen lokin rivin indeksia.
+			# Tarvitaan, koska joskus lokeissa voi olla sama aikaleima peräkkäin usealla rivillä.
+			try:
+				var_last_start_time_value = ana.variables[var_last_start_time_name]
+				print(" --- ESU: %s: %s" % (var_last_start_time_name,var_last_start_time_value))
+				if var_last_start_time_value == start_time:
+					log_line_index = ana.variables[var_last_line_index_name]
+					print(" --- ESU: Same start time: %s: %s" % (var_last_line_index_name,log_line_index))
+					# Seuraava rivi (jossa sama aikaleima)
+					log_line_index += 1
+					same_start_time = True
+			except KeyError:
+				print(" --- ESU: Not found: %s" % (var_last_start_time_name))
 
 		if same_start_time == False:
 			# Haetaan alkuajan lokirivin indeksi (nopeuttaa hakemista, jos ei tarvii aina lukea kaikkia rivejÃ¤ lokin alusta)
@@ -2041,7 +2068,7 @@ def init_analyzing(args):
 	ana.output_files_path = args.output_files_path
 
 	# Lailliset tilan tyypit ja parametrit
-	legal_state_types = ["SEARCH_EVENT:First","SEARCH_EVENT:Last",
+	legal_state_types = ["SEARCH_EVENT:First","SEARCH_EVENT:First:NextRow","SEARCH_EVENT:Last",
 						 "SEARCH_POSITION:Leaving","SEARCH_POSITION:Entering",
 						 "SEARCH_POSITION:Leaving:Serial","SEARCH_POSITION:Entering:Serial"]
 

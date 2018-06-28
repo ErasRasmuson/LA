@@ -18,15 +18,15 @@ from logdig_analyze_template import *
 VARIABLES = {
 	"STARTTIME-DATE":   "2013-01-01",
 	"STARTTIME-TIME": 	"00:00:00",
-	"STOPTIME-DATE":	"2013-01-30",
-	"STOPTIME-TIME": 	"23:59:59"
+	"STOPTIME-DATE":	"2013-01-01",
+	"STOPTIME-TIME": 	"01:40:00"
 	}
 START = {
 	"state":   "BEGIN",
 	"func":   "start"
 	}
 ESU["BEGIN"] = {
-	"esu_mode":             "SEARCH_EVENT:First",
+	"esu_mode":             "SEARCH_EVENT:First:NextRow",
 	"log_filename_expr":    "TaxiRides_small.csv",
 	"log_varnames":         "isStart=START",
 	"log_timecol_name":     "startTime",
@@ -46,7 +46,7 @@ ESU["END"] = {
 	"log_filename_expr":    "TaxiRides_small.csv",
 	"log_varnames":         "isStart=END,rideId=<SET-RIDEID>",
 	"log_timecol_name":     "startTime",
-	"log_start_time_expr":  "<startTime>,1",
+	"log_start_time_expr":  "<startTime>,0",
 	"log_stop_time_expr":   "<startTime>,7200",
 
 	"TF_state":    "BEGIN",
@@ -65,7 +65,7 @@ STOP = {
 def start():
 	set_datetime_variable("STARTTIME","STARTTIME-DATE","STARTTIME-TIME")
 	set_datetime_variable("STOPTIME","STOPTIME-DATE","STOPTIME-TIME")
-	set_sbk_file("TaxiRide","SET-RIDEID","startTime","endTime")
+	set_sbk_file("Taxi_LongRides","SET-RIDEID","startTime","endTime")
 	copy_variable("STARTTIME-BEGIN","STARTTIME")
 
 def found_begin():
