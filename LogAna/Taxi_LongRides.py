@@ -68,6 +68,8 @@ def start():
 	set_sbk_file("Taxi_LongRides","SET-RIDEID","startTime","endTime")
 	copy_variable("STARTTIME-BEGIN","STARTTIME")
 
+	#transform_operation_keyby("TaxiRides_small.csv","rideId")
+
 def found_begin():
 	print("found_begin")
 	copy_variable("SET-RIDEID","rideId")
