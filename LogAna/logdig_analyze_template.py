@@ -12,11 +12,17 @@ PURPOSE:
 CHANGES:    "$Log$"
 ###############################################################################
 """
-import datetime
+#import datetime
+from datetime import datetime
 import os.path
 import sys
 import re
 import collections
+
+# 4.7.2018 Esa
+from LogFilesData import *
+logfiles_data = LogFilesData()
+
 
 #ESU = {}
 ESU = collections.OrderedDict()
@@ -176,7 +182,8 @@ def set_datetime_variable(timestamp_var_name,date_var_name,time_var_name):
 	try:
 		# Muutetaan aikaleimat pythonin datetime-muotoon
 		timestamp_str = variables[date_var_name] + " " + variables[time_var_name]
-		timestamp_value = datetime.datetime.strptime(timestamp_str,"%Y-%m-%d %H:%M:%S")
+		#timestamp_value = datetime.datetime.strptime(timestamp_str,"%Y-%m-%d %H:%M:%S")
+		timestamp_value = datetime.strptime(timestamp_str,"%Y-%m-%d %H:%M:%S")
 		print("  Variable: %s, timestamp: %s" % (timestamp_var_name,timestamp_value))
 		variables[timestamp_var_name] = timestamp_value
 	except KeyError:
@@ -185,7 +192,8 @@ def set_datetime_variable(timestamp_var_name,date_var_name,time_var_name):
 def get_time_variable_value(timestamp_var_name):
 
 	print("get_time_variable_value: timestamp_var_name: %s" % timestamp_var_name)
-	timestamp_value = datetime.datetime.strptime(variables[timestamp_var_name][:19],"%Y-%m-%d %H:%M:%S")
+	#timestamp_value = datetime.datetime.strptime(variables[timestamp_var_name][:19],"%Y-%m-%d %H:%M:%S")
+	timestamp_value = datetime.strptime(variables[timestamp_var_name][:19],"%Y-%m-%d %H:%M:%S")
 	return timestamp_value
 
 def calc_time_diff(timediff_var_name,timediff_sec_var_name,time1_var_name,time2_var_name):
@@ -194,8 +202,10 @@ def calc_time_diff(timediff_var_name,timediff_sec_var_name,time1_var_name,time2_
 		(timediff_var_name,time1_var_name,time2_var_name))
 
 	try:
-		time1 = datetime.datetime.strptime(variables[time1_var_name],"%Y-%m-%d %H:%M:%S")
-		time2 = datetime.datetime.strptime(variables[time2_var_name],"%Y-%m-%d %H:%M:%S")
+		#time1 = datetime.datetime.strptime(variables[time1_var_name],"%Y-%m-%d %H:%M:%S")
+		#time2 = datetime.datetime.strptime(variables[time2_var_name],"%Y-%m-%d %H:%M:%S")
+		time1 = datetime.strptime(variables[time1_var_name],"%Y-%m-%d %H:%M:%S")
+		time2 = datetime.strptime(variables[time2_var_name],"%Y-%m-%d %H:%M:%S")
 		diff = time1 - time2
 		diff_sec = diff.seconds
 		print("calc_time_diff: %s - %s = %s, %s sec" % (time1,time2,diff,diff_sec))

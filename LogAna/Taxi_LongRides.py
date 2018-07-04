@@ -68,7 +68,8 @@ def start():
 	set_sbk_file("Taxi_LongRides","SET-RIDEID","startTime","endTime")
 	copy_variable("STARTTIME-BEGIN","STARTTIME")
 
-	#transform_operation_keyby("TaxiRides_small.csv","rideId")
+	logfiles_data.read("/home/esa/projects/LA/LogFile/PreProsessed/TaxiRides/TaxiRides_small.csv","startTime")
+	logfiles_data.transform_operation_keyby("/home/esa/projects/LA/LogFile/PreProsessed/TaxiRides/TaxiRides_small.csv","rideId")
 
 def found_begin():
 	print("found_begin")
