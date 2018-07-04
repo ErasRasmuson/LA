@@ -260,44 +260,57 @@ class LogFilesData:
 			print(" >>>> transform_operation_keyby: ERR: Reading lines from: %s" % logfile_name)
 			return False
 
-		print(" >>>> transform_operation_keyby: OPERATION IS STARTING ...")
+		print(" >>>> transform_operation_keyby: is starting, lines=%s" % log_line_counter)
+
+		#sys.exit(1)	
 
 		log_keyby_values = {}
-
+		keyby_logfile_name = ""
 		for log_line_index in range(1,log_line_counter):
-			line_list = self.logfile_lines[log_line_index]
+			line_list = logfile_lines[log_line_index]
 			keyby_col_value = line_list[keyby_column_index]
+
+			#print(" >>>> transform_operation_keyby: keyby_col_value = %s" % keyby_col_value)
+
+			keyby_logfile_name = "%s_%s" % (logfile_name,keyby_col_value) 
 
 			# Lasketaan keyby-sarakkeiden arvot ja tehdaan lista niista
 			try:
 				log_keyby_values[keyby_col_value] += 1
 			except:
 				log_keyby_values[keyby_col_value] = 1
-				keyby_logfile_name = "%s_%s" % (logfile_name,keyby_col_value) 
-				print(" >>>> transform_operation_keyby: keyby_logfile_name = %s" % keyby_logfile_name)
 				self.logfile_keyby_line_indices[keyby_logfile_name] = []
+				#print(" >>>> transform_operation_keyby: keyby_logfile_name = %s" % keyby_logfile_name)
 
 			# Muodostetaan keyby-sarakkeiden "tiedostot" (muistiin) viittauksina alkuperaiseen tiedostoon 
 			self.logfile_keyby_line_indices[keyby_logfile_name].append(log_line_index)
+			#print(" >>>> transform_operation_keyby: keyby_logfile_name = %s, indices = %s" % (keyby_logfile_name,self.logfile_keyby_line_indices[keyby_logfile_name]))
 
-		print(" >>>> transform_operation_keyby: OPERATION IS DONE ")
+			#if log_line_index > 1000: 
+			#	sys.exit(1)	
+
+
+		print(" >>>> transform_operation_keyby: is done ")
+
+		#sys.exit(1)	
 
 		# Tulostetaan loydetyt keyby-sarakkeen arvot ja niiden tiedot
-		print(" >>>> transform_operation_keyby: keyby values:")	
+		"""
+		print(" >>>> transform_operation_keyby: keyby values for column: %s" % keyby_column)	
 		cnt = 0
-		for keyby_value in self.log_keyby_values.keys():
+		for keyby_value in sorted(log_keyby_values.keys()):
 			cnt += 1
-			keyby_value_cnt = self.log_keyby_values[keyby_value]
-			print(" >>>> transform_operation_keyby: %5d, %s: %s" % (cnt,keyby_value,keyby_value_cnt))			
-
+			keyby_value_cnt = log_keyby_values[keyby_value]
+			print(" >>>> transform_operation_keyby: %5d, %s: %s" % (cnt,keyby_value,keyby_value_cnt))	
+		"""
+		"""
 		print("\n >>>> transform_operation_keyby: logfile_keyby_line_indices")	
 		cnt = 0
-		for logfile_keyby in self.logfile_keyby_line_indices.keys():
+		for logfile_keyby in sorted(self.logfile_keyby_line_indices.keys()):
 			cnt += 1
-			keyby_line_indices = self.logfile_keyby_line_indices[keyby_logfile_name]
+			keyby_line_indices = self.logfile_keyby_line_indices[logfile_keyby]
 			print(" >>>> transform_operation_keyby: %5d, %s: %s" % (cnt,logfile_keyby,keyby_line_indices))
-
-		#sys.exit(1)
+		"""
+		#sys.exit(1)	
 
 		return True
-
