@@ -43,8 +43,8 @@ ESU["BEGIN"] = {
 }
 ESU["END"] = {
 	"esu_mode":             "SEARCH_EVENT:First",
-	"log_filename_expr":    "TaxiRides_small.csv_<SET-RIDEID>",
-	"log_varnames":         "isStart=END",
+	"log_filename_expr":    "TaxiRides_small.csv",
+	"log_varnames":         "isStart=END,rideId=<SET-RIDEID>",
 	"log_timecol_name":     "startTime",
 	"log_start_time_expr":  "<startTime>,0",
 	"log_stop_time_expr":   "<startTime>,7200",
@@ -65,11 +65,11 @@ STOP = {
 def start():
 	set_datetime_variable("STARTTIME","STARTTIME-DATE","STARTTIME-TIME")
 	set_datetime_variable("STOPTIME","STOPTIME-DATE","STOPTIME-TIME")
-	set_sbk_file("Taxi_LongRides","SET-RIDEID","startTime","endTime")
+	set_sbk_file("Taxi_LongRides_V1","SET-RIDEID","startTime","endTime")
 	copy_variable("STARTTIME-BEGIN","STARTTIME")
 
-	logfiles_data.read("/home/esa/projects/LA/LogFile/PreProsessed/TaxiRides/TaxiRides_small.csv","startTime")
-	logfiles_data.transform_operation_keyby("/home/esa/projects/LA/LogFile/PreProsessed/TaxiRides/TaxiRides_small.csv","rideId")
+	#logfiles_data.read("/home/esa/projects/LA/LogFile/PreProsessed/TaxiRides/TaxiRides_small.csv","startTime")
+	#logfiles_data.transform_operation_keyby("/home/esa/projects/LA/LogFile/PreProsessed/TaxiRides/TaxiRides_small.csv","rideId")
 
 def found_begin():
 	print("found_begin")

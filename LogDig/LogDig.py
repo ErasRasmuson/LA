@@ -30,6 +30,7 @@ g_version = "$Id$"
 analyze_run_counter = 0
 
 # LogFilesData-luokka siirretty omaan tiedostoon LogFilesData.py. 4.7.2018 Esa.
+# Se importoidaan logdig_analyze_template.py-tiedoston kautta
 
 #******************************************************************************
 #       
