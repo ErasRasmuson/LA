@@ -1,5 +1,5 @@
 INFO
-20.3.2018
+5.7.2018
 Esa Heikkinen
 eras.rasmuson <at> gmail.com
 esa.heikkinen <at> student.tut.fi
@@ -27,6 +27,7 @@ Tools are made by Python 3 and pyqt5 (GUI). These must be installed before use.
 Also configparser-module are needed:
 - pip install configparser
 - pip3 install pyqt5
+- pip install psutil
 
 In windows all files and tools are located in the default path "D:\MyProjects\LA\".
 If you use different path, change the following line in every bat-script:
