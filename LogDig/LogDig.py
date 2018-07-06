@@ -594,7 +594,7 @@ class ESU:
 		var_last_start_time_name = ("ESU-%s-LAST-STARTTIME" % self.name)
 		var_last_line_index_name = ("ESU-%s-LAST-LINEINDEX" % self.name)
 		log_line_index = 0
-		print(" --- ESU: Last state var names: %s, %s" % (var_last_start_time_name,var_last_line_index_name))
+		#print(" --- ESU: Last state var names: %s, %s" % (var_last_start_time_name,var_last_line_index_name))
 
 		# Esa 28.6.2018
 		same_start_time = False
@@ -628,8 +628,6 @@ class ESU:
 		# Luetaan lokirivit muistista
 		self.log_lines = self.logfiles.get_lines(logfile_name)
 
-		print(" --- ESU: log_line_index = %s" % log_line_index )
-
 		# Haetaan otsikon sarakkeiden nimet ja lukumäärä
 		self.log_column_names_list,self.log_column_numbers = self.logfiles.get_header_data(logfile_name)
 		
@@ -643,7 +641,8 @@ class ESU:
 		# Käydään lokirivit läpi alkaen tietystä rivistä (indeksistä)
 		# Ei saa sisältää otsikko riviä !
 		lines_len = len(self.log_lines)
-		print(" === lines_len = %s" % lines_len)
+		#print(" === lines_len = %s" % lines_len)
+		print(" --- ESU: log_line_index = %s, lines_len = %s" % (log_line_index,lines_len) )
 		while log_line_index < lines_len:
 
 			#line = self.log_lines[self.log_line_index]
@@ -1619,6 +1618,8 @@ class BMU:
 		#print(" Not found : %s" % self.states_not_found_id_list) 
 		#print(" Exit      : %s" % self.states_exit_id_list) 
 
+		# Poistetu 6.7.2018 Esa. Naita voi tulla liikaa stdout:iin.
+		"""
 		print("\n#### States \"Found\" IDs:")
 		for state in self.states_found_id_array.keys():
 			print("  %-20s: %s" % (state,self.states_found_id_array[state]))
@@ -1628,7 +1629,7 @@ class BMU:
 		print("#### States \"Exit\" IDs:")
 		for state in self.states_exit_id_array.keys():
 			print("  %-20s: %s" % (state,self.states_exit_id_array[state]))
-
+		"""
 
 def import_analyze_file(pathname,filename,mode):
 

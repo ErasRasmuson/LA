@@ -172,7 +172,7 @@ class LogFilesData:
 	# Muutettu 5.7.2018 Esa
 	def get_lines(self,logfile_name):
 
-		print(" >>>> LogFilesData: get_lines: Logfile: %s" % (logfile_name))
+		#print(" >>>> LogFilesData: get_lines: Logfile: %s" % (logfile_name))
 
 		log_lines = []
 
@@ -184,22 +184,25 @@ class LogFilesData:
 			return log_lines
 
 		if log_type == "INDIRECT":
+			# Alkuperainen tiedosto
 			indirect_logfile_name = self.logfile_indirect_file[logfile_name]
 
-			# Kopiodaan otsikotiedot
+			# Kopiodaan otsikotiedot alkuperaisesta
 			self.log_column_names_list[logfile_name] = self.log_column_names_list[indirect_logfile_name]
 			self.log_column_numbers[logfile_name] = self.log_column_numbers[indirect_logfile_name]
 
-			# Kopioidaan data
-			print(" >>>> LogFilesData: get_lines: indirect_logfile_name: %s" % indirect_logfile_name)
+			# Kopioidaan data alkuperaisesta
+			#print(" >>>> LogFilesData: get_lines: indirect_logfile_name: %s" % indirect_logfile_name)
+			line_cnt = 0
 			for line_num in self.logfile_keyby_line_indices[logfile_name]:
 				#print(" >>>> LogFilesData: get_lines: line_num: %s" % line_num)
 				line_list = self.logfile_lines[indirect_logfile_name][line_num]
 				#print(" >>>> LogFilesData: get_lines: line: %s" % line_list)
 				log_lines.append(line_list)
 
-				# Tarviiko tata ??!!
-				# = self.logline_times[indirect_logfile_name,line_num]
+				# Myos aikaleima alkuperaisesta, ei toimi
+				#self.logline_times[logfile_name,line_cnt] = self.logline_times[indirect_logfile_name,line_num]
+				#line_cnt += 1
 
 		else:
 			try:
@@ -349,6 +352,11 @@ class LogFilesData:
 				self.logfile_indirect_file[keyby_logfile_name] = logfile_name
 				self.logline_index[keyby_logfile_name] = 0
 
+			# Aikaleima kopioidaan jo tassa vaiheessa
+			self.logline_times[keyby_logfile_name,log_keyby_values[keyby_col_value] - 1] = \
+				self.logline_times[logfile_name,log_line_index]
+
+			# keyby-tiedoston rivien maara
 			self.log_data_line_counter[keyby_logfile_name] = log_keyby_values[keyby_col_value]
 
 			# Muodostetaan keyby-sarakkeiden "tiedostot" (muistiin) viittauksina alkuperaiseen tiedostoon
