@@ -58,6 +58,7 @@ class ESU:
 	last_found_old_variables = {}
 	state_log_time_column = ""
 	state_log_variables_list = []
+	state_log_variables_exprs_code_list = [] # Esa 2.8.2018
 	state_data_variables_list = []
 	state_position_variables_list = []
 	position_counter = 0
@@ -299,11 +300,39 @@ class ESU:
 		print("POS OLD: %s, %s, %s" % (ana.variables["INT-LATITUDE-OLD"],ana.variables["INT-LONGITUDE-OLD"],ana.variables["INT-LOCAT-TIME-OLD"]))
 		print("POS NEW: %s, %s, %s" % (ana.variables["INT-LATITUDE-NEW"],ana.variables["INT-LONGITUDE-NEW"],ana.variables["INT-LOCAT-TIME-NEW"]))
 
-	def read_input_variables(self,state_log_variables,state_data_variables,state_position_variables):
+
+	def run_code(self,code):
+
+		print("ESU:run_code")
+		return eval(code)
+
+	def read_input_variables(self,state_log_variables,state_log_variables_exprs,state_data_variables,state_position_variables):
 	
 		self.log_variables = {}
 		self.data_variables = {}
-		
+
+		# Esa 2.8.2018
+		# Muodostetaan ja kaannetaan lausekkeet, joissa kaytetty muuttujia.
+		# Tama "log_varexprs" korvaa osittain vanhan "log_varnames" (jossa ei voi tehda esim <- tai >-vertailua) BML-kielessa
+		expr_list = state_log_variables_exprs.split(",")
+		self.state_log_variables_exprs_code_list = []
+		print("ESU: log variables expressions: %s"  % expr_list)
+		cnt = 0
+		for expr_str in expr_list:
+			if len(expr_str) > 1:
+				cnt += 1
+
+				# Haetaan metamuuttujat lausekkeesta ja muutetaan ne oikeiksi muuttujiksi
+				code_str = expr_str
+
+				# Kaannetaan lauseke
+				code = compile(code_str,"<string>","eval")
+
+				print(" %5d: \"%s\"" % (cnt,expr_str))
+
+				# Laitetaan koodi talteen
+				self.state_log_variables_exprs_code_list.append(code)
+
 		# Nykyiset globaalien loki-muuttujien arvot talteen
 		# Vai pitäisikö arvokin tulla suoraan funktioparametrilla (vanha ?)
 
@@ -367,7 +396,7 @@ class ESU:
 				except KeyError:
 					print("ESU: ERR: Not found data-variable: %s in state: %s" % (var_oper,self.name))
 					return False
-					
+
 		# Paikkatieto-muuttujien nimet talteen (jos annettu)
 		if len(state_position_variables) > 1:
 			self.state_position_variables_list = state_position_variables.split(",")
@@ -714,7 +743,20 @@ class ESU:
 							
 					#print("ok_count=%s ,var_count=%s" % (ok_count,var_count))
 
-					if ok_count == var_count:
+					# Esa 2.8.2018
+					# Onko lausekkeet (joissa kaytetty muuttujia) ok
+					expr_ok_count = 0
+					expr_count = 0
+					for expr_code in self.state_log_variables_exprs_code_list:
+						expr_count += 1
+						if self.run_code(expr_code) == True:
+							expr_ok_count += 1
+
+
+					# Esa 2.8.2018
+					#if ok_count == var_count:
+					# Jos muuttujat ja lausekkeet ok
+					if ok_count == var_count and expr_ok_count == expr_count:
 					
 						self.line_found_counter += 1
 
@@ -771,7 +813,7 @@ class ESU:
 		return self.onexit(0)
 		
 	def run(self,state_counter,start_time,stop_time,logfile_name,datafile_name,state_log_time_column,
-			state_log_variables,state_data_variables,state_position_variables,state_type,output_files_path):
+			state_log_variables,state_log_variables_exprs,state_data_variables,state_position_variables,state_type,output_files_path):
 
 
 		self.esu_run_counter += 1
@@ -875,7 +917,7 @@ class ESU:
 
 		# Muuten haetaan vain yksi tapahtuma
 		else:
-			ret =  self.run_esu_state(state_log_variables,state_data_variables,state_position_variables,
+			ret =  self.run_esu_state(state_log_variables,state_log_variables_exprs,state_data_variables,state_position_variables,
 							logfile_name,datafile_name,start_time,stop_time,
 							state_type_param,state_type_param2,0)
 
@@ -885,12 +927,12 @@ class ESU:
 
 			return ret
 		
-	def run_esu_state(self,state_log_variables,state_data_variables,state_position_variables,
+	def run_esu_state(self,state_log_variables,state_log_variables_exprs,state_data_variables,state_position_variables,
 					logfile_name,datafile_name,start_time,stop_time,
 					state_type_param,state_type_param2,serial_found_cnt):
 
 		# Luetaan inputtina saadut loki-, data- ja paikkatieto-muuttujat
-		ret = self.read_input_variables(state_log_variables,state_data_variables,state_position_variables)
+		ret = self.read_input_variables(state_log_variables,state_log_variables_exprs,state_data_variables,state_position_variables)
 		if ret == False:
 			print("ESU: ERR: Reading input variables")
 			self.onexit(-1)
@@ -951,6 +993,7 @@ class BMU:
 	state_settings = {}
 	state_log_time_column = {}
 	state_log_variables = {}
+	state_log_variables_exprs = {} # Esa 2.8.2018
 	state_data_variables = {}
 	state_position_variables = {}
 	state_type = ""
@@ -994,7 +1037,7 @@ class BMU:
 
 	def __init__(self,name,analyze_file_mode,states,state_order,transition_names,start_state_name,transition,transition_function,
 				 state_onentry_function,state_onexit_function,end_state_name,state_logfiles,
-				 state_datafiles,state_settings,state_log_time_column,state_log_variables,state_data_variables,
+				 state_datafiles,state_settings,state_log_time_column,state_log_variables,state_log_variables_exprs,state_data_variables,
 				 state_position_variables,state_type,state_start_time_limit,state_stop_time_limit,
 				 gui_enable,gui_seq_draw_mode,ge_kml_enable,gui,state_GUI_line_num,analyzing_mode,output_files_path,
 				 logfiles_data):
@@ -1031,6 +1074,8 @@ class BMU:
 		#print("self.state_log_time_column = %s\n" % self.state_log_time_column)
 		self.state_log_variables=state_log_variables
 		#print("self.state_log_variables = %s\n" % self.state_log_variables)
+		self.state_log_variables_exprs=state_log_variables_exprs # Esa 2.8.2018
+		#print("self.state_log_variables_exprs = %s\n" % self.state_log_variables_exprs)
 		self.state_data_variables=state_data_variables
 		#print("self.state_data_variables = %s\n" % self.state_data_variables)
 		self.state_position_variables=state_position_variables
@@ -1471,7 +1516,10 @@ class BMU:
 				
 				# Lokitiedoston (haku)muuttujat
 				state_log_variables=self.state_log_variables[self.current_state_name]
-				
+
+				# Lokitiedoston (haku)muuttujien lausekkeet. Esa 2.8.2018
+				state_log_variables_exprs=self.state_log_variables_exprs[self.current_state_name]
+
 				# Datatiedoston (haku)muuttujat
 				state_data_variables=self.state_data_variables[self.current_state_name]
 				
@@ -1501,6 +1549,7 @@ class BMU:
 									datafile_name,
 									state_log_time_column,
 									state_log_variables,
+									state_log_variables_exprs,
 									state_data_variables,
 									state_position_variables,
 									state_type,
@@ -1697,6 +1746,9 @@ def import_analyze_file(pathname,filename,mode):
 			state_position_lat_variable = ""			
 			ana.state_datafiles[var_key] = ""
 			ana.state_data_variables[var_key] = ""
+			# Esa 2.8.2018
+			ana.state_log_variables[var_key] = ""
+			ana.state_log_variables_exprs[var_key] = ""
 
 			for var_key2 in var_value.keys():
 				var_value2 = var_value[var_key2]
@@ -1708,6 +1760,8 @@ def import_analyze_file(pathname,filename,mode):
 					ana.state_logfiles[var_key] = var_value2
 				elif var_key2 == "log_varnames":
 					ana.state_log_variables[var_key] = var_value2
+				elif var_key2 == "log_varexprs":
+					ana.state_log_variables_exprs[var_key] = var_value2
 				elif var_key2 == "log_timecol_name":
 					ana.state_log_time_column[var_key] = var_value2				
 				elif var_key2 == "log_start_time_expr":
@@ -1800,6 +1854,7 @@ def analyze_logs(args,gui,source,trace_mode):
 						ana.state_settings,
 						ana.state_log_time_column,
 						ana.state_log_variables,
+			 			ana.state_log_variables_exprs, # Esa 2.8.2018
 						ana.state_data_variables,
 						ana.state_position_variables,
 						ana.state_type,

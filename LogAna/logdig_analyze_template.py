@@ -77,6 +77,9 @@ state_settings = {}
 # Tilojen lokitiedoston muuttujat
 state_log_variables = {}
 
+# Tilojen lokitiedostojen muuttujien lausekkeet. Esa 2.8.2018
+state_log_variables_exprs = {}
+
 # Tilojen datatiedoston muuttujat
 state_data_variables = {}
 
