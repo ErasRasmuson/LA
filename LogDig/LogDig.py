@@ -140,26 +140,59 @@ class ESU:
 			#sys.exit()
 			print("ESU: %s: Return: Exit" % self.name)
 			return "Exit"
-			
+
+	# Esa 2.8.2018
+	def convert_variable_internal_name(self,var_string):
+
+		# KESKEN !!
+
+		var_name = var_string[var_string.find("<")+1:var_string.find(">")]
+
+		print("var_name: %s" % var_name)
+
+		var_internal_name = "ana.variables[\"%s\"]" % var_name
+		var_name_ext = "<"+var_name+">"
+		var_string = var_string.replace(var_name_ext,var_internal_name)
+
+		return (True,var_string)
+
+	# Esa 2.8.2018
+	def get_variable_internal_name(self,var_string,var_list):
+		return self.get_variable(var_string,var_list,"N")
+
+	# Esa 2.8.2018
 	def get_variable_value(self,var_string,var_list):
+		return self.get_variable(var_string,var_list,"V")
+
+	def get_variable(self,var_string,var_list,value_or_name):
 	
 		# Haetaan muuttujista merkkijonossa käytetyä muuttujaa
 		#for var_name in self.state_log_variables_list:
 		#print("get_variable_value: var_list = %s" % var_list)
+		var_cnt = 0
 		for var_name in var_list:
 			var_name_ext = "<" + var_name + ">"
 			
 			# Jos löytyi, korvataan muuttujan nimi sen arvolla
 			if var_name_ext in var_string:
-			
+				var_cnt += 1
 				try:
 					var_value = ana.variables[var_name]
 				except KeyError:
 					print("ESU: ERR: Not found variable: %s in state: %s (get_variable_value)" % (var_name,self.name))
 					return (False,var_string)
-				
-				var_string = var_string.replace(var_name_ext,var_value)
-		
+
+				# Esa 2.8.2018
+				if value_or_name == "V":
+					var_string = var_string.replace(var_name_ext,var_value)
+				else:
+					var_internal_name = "ana.variables[\"%s\"]" % var_name
+					var_string = var_string.replace(var_name_ext,var_internal_name)
+
+		# Esa 2.8.2018
+		if var_cnt == 0:
+			return (False,var_string)
+
 		return (True,var_string)
 		
 	def check_position_in_area(self,lon,lat):
@@ -318,17 +351,25 @@ class ESU:
 		self.state_log_variables_exprs_code_list = []
 		print("ESU: log variables expressions: %s"  % expr_list)
 		cnt = 0
+		#all_variables_list = ana.variables.keys()
+		#print("all_variables_list: %s" % all_variables_list)
 		for expr_str in expr_list:
 			if len(expr_str) > 1:
 				cnt += 1
 
-				# Haetaan metamuuttujat lausekkeesta ja muutetaan ne oikeiksi muuttujiksi
-				code_str = expr_str
+				# Haetaan metamuuttujien nimet lausekkeesta ja muutetaan niiden nimet sisaisten muuttujien nimiksi
+				#code_str = expr_str
 
-				# Kaannetaan lauseke
+				#ret, code_str = self.get_variable_internal_name(expr_str,all_variables_list)
+				ret, code_str = self.convert_variable_internal_name(expr_str)
+				if ret == False:
+					print("ESU: ERR: Could not convert variables in %s expression in state: %s" % (expr_str,self.name))
+					return False
+
+				print("ESU: %5d: Expression expr_str: %s, code_str: %s" % (cnt,expr_str,code_str))
+
+				# Kaannetaan lauseke (Pitaisko tama kaantaminen laittaa BMU:n puolelle, ett� ei kuluta niin paljon CPU-aikaa ?)
 				code = compile(code_str,"<string>","eval")
-
-				print(" %5d: \"%s\"" % (cnt,expr_str))
 
 				# Laitetaan koodi talteen
 				self.state_log_variables_exprs_code_list.append(code)
@@ -341,8 +382,12 @@ class ESU:
 		print("ESU: log variables: %s" % var_oper_list)
 		cnt = 0
 		for var_oper in var_oper_list:
-			cnt += 1
 
+			# Esa 2.8.2018
+			if len(var_oper) == 0:
+				continue
+
+			cnt += 1
 			# Tehdään mahdolliset muuttujan operaatiot, kuten sijoitus toisesta muuttujasta
 			var_oper_mode,var_name1,var_value1,var_name2 = self.do_variable_operations(cnt,var_oper)
 
@@ -364,7 +409,7 @@ class ESU:
 			except KeyError:
 				print("ESU: ERR: Not found log-variable: %s in state: %s" % (var_oper,self.name))
 				return False
-				
+
 		# Nykyiset globaalien data-muuttujien arvot talteen
 		var_oper_list = state_data_variables.split(",")
 		self.state_data_variables_list = []
@@ -728,7 +773,7 @@ class ESU:
 					#if self.gui_enable == 1:
 					#	self.draw_event(self.name,line_timestamp,"")
 
-					# Onko rivin muuttujien arvot samat kuin input-muuttujien arvot
+					# Onko rivin muuttujien arvot samat kuin input-muuttujien arvot (ESU parameter: log_varnames)
 					ok_count = 0
 					var_count = 0
 					for var_name in self.state_log_variables_list:
@@ -744,7 +789,7 @@ class ESU:
 					#print("ok_count=%s ,var_count=%s" % (ok_count,var_count))
 
 					# Esa 2.8.2018
-					# Onko lausekkeet (joissa kaytetty muuttujia) ok
+					# Onko lausekkeet (joissa kaytetty muuttujia) ok (ESU parameter: log_varexprs)
 					expr_ok_count = 0
 					expr_count = 0
 					for expr_code in self.state_log_variables_exprs_code_list:
@@ -755,7 +800,7 @@ class ESU:
 
 					# Esa 2.8.2018
 					#if ok_count == var_count:
-					# Jos muuttujat ja lausekkeet ok
+					# Jos muuttujat (log_varnames) ja lausekkeet (log_varexprs) ok
 					if ok_count == var_count and expr_ok_count == expr_count:
 					
 						self.line_found_counter += 1
