@@ -59,6 +59,7 @@ class ESU:
 	state_log_time_column = ""
 	state_log_variables_list = []
 	state_log_variables_exprs_code_list = [] # Esa 2.8.2018
+	state_log_variables_exprs_list = [] # Esa 3.8.2018
 	state_data_variables_list = []
 	state_position_variables_list = []
 	position_counter = 0
@@ -141,16 +142,19 @@ class ESU:
 			print("ESU: %s: Return: Exit" % self.name)
 			return "Exit"
 
-	# Esa 2.8.2018
+	# Esa 3.8.2018
 	def convert_variable_internal_name(self,var_string):
 
-		# KESKEN !!
+		# KESKEN !! Voi olla vain yksi muuttuja lausekkeessa,
+		# <- ja >-vertailumerkit voi sotkea !
+		# Pilkkua ei saa kayttaa itse lausekkeissa !
 
 		var_name = var_string[var_string.find("<")+1:var_string.find(">")]
 
-		print("var_name: %s" % var_name)
+		#print("var_name: %s" % var_name)
 
 		var_internal_name = "ana.variables[\"%s\"]" % var_name
+		#var_internal_name = "last_read_variables[\"%s\"]" % var_name
 		var_name_ext = "<"+var_name+">"
 		var_string = var_string.replace(var_name_ext,var_internal_name)
 
@@ -189,9 +193,9 @@ class ESU:
 					var_internal_name = "ana.variables[\"%s\"]" % var_name
 					var_string = var_string.replace(var_name_ext,var_internal_name)
 
-		# Esa 2.8.2018
-		if var_cnt == 0:
-			return (False,var_string)
+		# Esa 3.8.2018, merkkijonosa ei aina ole muuttujia, niin tata ei tarvii ?!
+		#if var_cnt == 0:
+		#	return (False,var_string)
 
 		return (True,var_string)
 		
@@ -333,46 +337,56 @@ class ESU:
 		print("POS OLD: %s, %s, %s" % (ana.variables["INT-LATITUDE-OLD"],ana.variables["INT-LONGITUDE-OLD"],ana.variables["INT-LOCAT-TIME-OLD"]))
 		print("POS NEW: %s, %s, %s" % (ana.variables["INT-LATITUDE-NEW"],ana.variables["INT-LONGITUDE-NEW"],ana.variables["INT-LOCAT-TIME-NEW"]))
 
+	# Esa 3.8.2018
+	def run_expr_code(self,expr_code):
 
-	def run_code(self,code):
+		print("ESU: run expression's code")
+		try:
+			ret = eval(expr_code)
+			return (True,ret)
+		except:
+			print("ESU: ERR in running expr code")
 
-		print("ESU:run_code")
-		return eval(code)
+		return (False,False)
 
 	def read_input_variables(self,state_log_variables,state_log_variables_exprs,state_data_variables,state_position_variables):
 	
 		self.log_variables = {}
 		self.data_variables = {}
 
-		# Esa 2.8.2018
+		# Esa 3.8.2018
 		# Muodostetaan ja kaannetaan lausekkeet, joissa kaytetty muuttujia.
 		# Tama "log_varexprs" korvaa osittain vanhan "log_varnames" (jossa ei voi tehda esim <- tai >-vertailua) BML-kielessa
-		expr_list = state_log_variables_exprs.split(",")
-		self.state_log_variables_exprs_code_list = []
-		print("ESU: log variables expressions: %s"  % expr_list)
-		cnt = 0
-		#all_variables_list = ana.variables.keys()
-		#print("all_variables_list: %s" % all_variables_list)
-		for expr_str in expr_list:
-			if len(expr_str) > 1:
-				cnt += 1
+		# Tehdaan vain kerran ensimmaisen tilan suoritukessa
+		if self.esu_run_counter == 1:
+			expr_list = state_log_variables_exprs.split(",")
+			self.state_log_variables_exprs_list = []
+			self.state_log_variables_exprs_code_list = []
+			print("ESU: log variables expressions: %s"  % expr_list)
 
-				# Haetaan metamuuttujien nimet lausekkeesta ja muutetaan niiden nimet sisaisten muuttujien nimiksi
-				#code_str = expr_str
+			cnt = 0
+			#all_variables_list = ana.variables.keys()
+			#print("all_variables_list: %s" % all_variables_list)
+			for expr_str in expr_list:
+				if len(expr_str) > 1:
+					cnt += 1
 
-				#ret, code_str = self.get_variable_internal_name(expr_str,all_variables_list)
-				ret, code_str = self.convert_variable_internal_name(expr_str)
-				if ret == False:
-					print("ESU: ERR: Could not convert variables in %s expression in state: %s" % (expr_str,self.name))
-					return False
+					# Haetaan metamuuttujien nimet lausekkeesta ja muutetaan niiden nimet sisaisten muuttujien nimiksi
+					ret, code_str = self.convert_variable_internal_name(expr_str)
+					if ret == False:
+						print("ESU: ERR: Could not convert variables in %s expression in state: %s" % (expr_str,self.name))
+						return False
 
-				print("ESU: %5d: Expression expr_str: %s, code_str: %s" % (cnt,expr_str,code_str))
+					print("ESU: %5d: Expression expr_str: %s, code_str: %s" % (cnt,expr_str,code_str))
 
-				# Kaannetaan lauseke (Pitaisko tama kaantaminen laittaa BMU:n puolelle, ett� ei kuluta niin paljon CPU-aikaa ?)
-				code = compile(code_str,"<string>","eval")
+					# Kaannetaan lauseke
+					code = compile(code_str,"<string>","eval")
 
-				# Laitetaan koodi talteen
-				self.state_log_variables_exprs_code_list.append(code)
+					# Laitetaan koodi talteen
+					self.state_log_variables_exprs_list.append(code_str)
+					self.state_log_variables_exprs_code_list.append(code)
+		else:
+			print("ESU: log variables expressions: already compiled")
 
 		# Nykyiset globaalien loki-muuttujien arvot talteen
 		# Vai pitäisikö arvokin tulla suoraan funktioparametrilla (vanha ?)
@@ -531,6 +545,7 @@ class ESU:
 		else:
 			var_oper_mode = 1
 
+		# Naita ei enaa tarvii, koska sama asia voidaan tehda log_varexprs-parametrilla ? Esa 3.8.2018
 		# 14.6.2016 HUOM! Pitäisi vielä lisätä seuraavat moodit:
 		# - 3: regexp
 		# - (4: Toisen muuttujan arvon sijoitus, on jo !)
@@ -753,6 +768,12 @@ class ESU:
 				#print("ESU: %5d: Var name: %-20s value: \"%s\"" % (col_index,column_name,last_read_variables[column_name]))
 				col_index += 1
 
+				# Esa 3.8.3018
+				# Laitetaan talteen myos globaaliin muuttujataulukkoon LAST-etuliitteella
+				# Tarvitaan BML-kielen ESU:n log_varexprs-parametrissa alla olevassa (kaannetyssa) vertailussa
+				var_name = "LAST-%s" % column_name
+				ana.variables[var_name] = var_value
+
 			timestamp_str = last_read_variables[self.state_log_time_column]
 			line_timestamp = datetime.strptime(timestamp_str,"%Y-%m-%d %H:%M:%S")
 			
@@ -794,9 +815,24 @@ class ESU:
 					expr_count = 0
 					for expr_code in self.state_log_variables_exprs_code_list:
 						expr_count += 1
-						if self.run_code(expr_code) == True:
-							expr_ok_count += 1
+						(ret_eval,ret_expr) = self.run_expr_code(expr_code)
+						if ret_eval == True:
+							if ret_expr == True:
+								expr_ok_count += 1
+						else:
+							print("ESU: ERR: in expression of log_varexprs-parameter")
+							return self.onexit(-1)
 
+					#for expr in self.state_log_variables_exprs_list:
+					#	expr_count += 1
+					#	print("ESU: Expr %d: %s" % (expr_count,expr))
+					#	try:
+					#		ret = eval(expr)
+					#	except:
+					#		print("ESU: ERR: in expression of log_varexprs-parameter")
+					#		return self.onexit(-1)
+					#	if ret == True:
+					#		expr_ok_count += 1
 
 					# Esa 2.8.2018
 					#if ok_count == var_count:

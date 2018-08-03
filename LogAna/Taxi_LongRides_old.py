@@ -28,7 +28,7 @@ START = {
 ESU["BEGIN"] = {
 	"esu_mode":             "SEARCH_EVENT:First:NextRow",
 	"log_filename_expr":    "TaxiRides_small.csv",
-	"log_varexprs":         "<LAST-isStart>==\"START\"",
+	"log_varnames":         "isStart=START",
 	"log_timecol_name":     "startTime",
 	"log_start_time_expr":  "<STARTTIME-BEGIN>,0",
 	"log_stop_time_expr":   "<STOPTIME>,0",
@@ -44,7 +44,7 @@ ESU["BEGIN"] = {
 ESU["END"] = {
 	"esu_mode":             "SEARCH_EVENT:First",
 	"log_filename_expr":    "TaxiRides_small.csv_<SET-RIDEID>",
-	"log_varexprs":         "<LAST-isStart>==\"END\"",
+	"log_varnames":         "isStart=END",
 	"log_timecol_name":     "startTime",
 	"log_start_time_expr":  "<startTime>,0",
 	"log_stop_time_expr":   "<startTime>,7200",
