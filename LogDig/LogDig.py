@@ -149,6 +149,10 @@ class ESU:
 		# <- ja >-vertailumerkit voi sotkea !
 		# Pilkkua ei saa kayttaa itse lausekkeissa !
 
+		keys = ['<','>']
+		indexes = [var_string.index(key) for key in keys if key in var_string]
+		print("indexes: %s" % indexes)
+
 		var_name = var_string[var_string.find("<")+1:var_string.find(">")]
 
 		#print("var_name: %s" % var_name)
@@ -787,8 +791,8 @@ class ESU:
 			if line_timestamp >= start_time:
 				if line_timestamp < stop_time:
 					self.line_sel_counter += 1
-					#print("ESU: Line %s in time-gap: %s -- %s" % (line,ana.variables["START-TIMESTAMP"],ana.variables["STOP-TIMESTAMP"]))
-					#print("ESU: Line %s in time-gap: %s -- %s" % (line,start_time,stop_time))
+					#print("ESU: Line %s in time-gap: %s -- %s" % (line_list,ana.variables["START-TIMESTAMP"],ana.variables["STOP-TIMESTAMP"]))
+					#print("ESU: Line %s in time-gap: %s -- %s" % (line_list,start_time,stop_time))
 					
 					# Piirretään löydetty tapahtuma GUI:hin
 					#if self.gui_enable == 1:

@@ -134,6 +134,37 @@ def incr_counter(var_name):
 	except KeyError:
 		print("incr_counter: ERR: variable: %s" % (var_name))
 
+# Esa 6.8.2018
+def add_value(var_name,value_var_name):
+
+	try:
+		if type(variables[value_var_name]) is not int:
+			variables[var_name] += int(variables[value_var_name])
+		else:
+			variables[var_name] += variables[value_var_name]
+		print("  Add value: %s, %s = \"%d\"" % (var_name,value_var_name,variables[var_name]))
+	except KeyError:
+		print("add_value: ERR: variable: %s or %s" % (var_name,value_var_name))
+
+# Esa 6.8.2018
+def add_string(var_name,value_var_name):
+
+	try:
+		variables[var_name] += "," + variables[value_var_name]
+		print("  Add string: %s, %s = \"%s\"" % (var_name,value_var_name,variables[var_name]))
+	except KeyError:
+		print("add_vadd_stringalue: ERR: variable: %s or %s" % (var_name,value_var_name))
+
+# Esa 6.8.2018
+def calc_average(avg_var_name,sum_var_name,cnt_var_name):
+
+	try:
+		variables[avg_var_name] = variables[sum_var_name] / variables[cnt_var_name]
+
+		print("  Calc avrage: %s, %s = \"%d\"" % (sum_var_name,cnt_var_name,variables[avg_var_name]))
+	except KeyError:
+		print("calc_average: ERR: variable: %s or %s" % (sum_var_name,cnt_var_name))
+
 def get_variable_str_value(var_name):
 
 	try:
