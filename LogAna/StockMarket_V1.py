@@ -1,10 +1,10 @@
 # -*- coding: cp1252 -*-
 """
 ###############################################################################
-HEADER:     StockMarket.py
+HEADER:     StockMarket_V1.py
 
 AUTHOR:     Esa Heikkinen
-DATE:       06.08.2018
+DATE:       07.08.2018
 DOCUMENT:   -
 VERSION:    "$Id$"
 REFERENCES: -
@@ -61,7 +61,7 @@ ESU["Aplus"] = {
 ESU["B"] = {
 	"esu_mode":             "SEARCH_EVENT:First:NextRow",
 	"log_filename_expr":    "StockMarket.csv",
-	"log_varexprs":         "int(<LAST-VOLUME>) < int(ana.variables[\"VOLUME\"])*0.8",
+	"log_varexprs":         "float(<LAST-VOLUME>) < float(ana.variables[\"VOLUME\"])*0.8",
 	"log_timecol_name":     "TIME",
 	"log_start_time_expr":  "<Aplus-FOUND-TIME>,0",
 	"log_stop_time_expr":   "<Aplus-FOUND-TIME>,11",
@@ -99,6 +99,7 @@ def not_found_A():
 
 def found_Aplus():
 	print("found_Aplus")
+	add_string("EVENT-PATTERN","ID")
 
 def not_found_Aplus():
 	print("not_found_Aplus")
@@ -118,7 +119,6 @@ def not_found_B():
 	incr_counter("Aplus-CNT")
 	add_value("Aplus-SUM","PRICE")
 	calc_average("AVG-PRICE","Aplus-SUM","Aplus-CNT")
-	add_string("EVENT-PATTERN","ID")
 
 def exit_error():
 	print("exit_error")
