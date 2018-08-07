@@ -30,10 +30,10 @@ ESU["A"] = {
 	"log_filename_expr":    "StockMarket.csv",
 	"log_varexprs":         "int(<LAST-VOLUME>) > 1000",
 	"log_timecol_name":     "TIME",
-	"log_start_time_expr":  "<A-TIME>,1",
+	"log_start_time_expr":  "<A-STARTTIME>,1",
 	"log_stop_time_expr":   "<STOPTIME>,0",
 
-	"TF_state":    "AplusB",
+	"TF_state":    "Aplus",
 	"TF_func":     "found_A",
 	"TN_state":    "STOP",
 	"TN_func":     "not_found_A",
@@ -41,18 +41,35 @@ ESU["A"] = {
 	"TE_func":     "exit_error",
 	"GUI_line_num":	"0"
 }
-ESU["AplusB"] = {
+ESU["Aplus"] = {
 	"esu_mode":             "SEARCH_EVENT:First:NextRow",
 	"log_filename_expr":    "StockMarket.csv",
-	"log_varexprs":         "int(<LAST-PRICE>) > ana.variables[\"AVG-PRICE\"],int(<LAST-VOLUME>) < ana.variables[\"VOLUME-80\"]",
+	"log_varexprs":         "int(<LAST-PRICE>) > ana.variables[\"AVG-PRICE\"]",
 	"log_timecol_name":     "TIME",
-	"log_start_time_expr":  "<AplusB-TIME>,0",
-	"log_stop_time_expr":   "<A-TIME>,3600",
+	"log_start_time_expr":  "<Aplus-STARTTIME>,1",
+	"log_stop_time_expr":   "<Aplus-STARTTIME>,3600",
 
-	"TF_state":    "AplusB",
-	"TF_func":     "found_AplusB",
+	"TF_state":    "B",
+	"TF_func":     "found_Aplus",
 	"TN_state":    "A",
-	"TN_func":     "not_found_AplusB",
+	"TN_func":     "not_found_Aplus",
+	"TE_state":    "STOP",
+	"TE_func":     "exit_error",
+	"onentry_func": "Aplus_onentry",
+	"GUI_line_num":	"1"
+}
+ESU["B"] = {
+	"esu_mode":             "SEARCH_EVENT:First:NextRow",
+	"log_filename_expr":    "StockMarket.csv",
+	"log_varexprs":         "int(<LAST-VOLUME>) < int(ana.variables[\"VOLUME\"])*0.8",
+	"log_timecol_name":     "TIME",
+	"log_start_time_expr":  "<Aplus-FOUND-TIME>,0",
+	"log_stop_time_expr":   "<Aplus-FOUND-TIME>,11",
+
+	"TF_state":    "A",
+	"TF_func":     "found_B",
+	"TN_state":    "Aplus",
+	"TN_func":     "not_found_B",
 	"TE_state":    "STOP",
 	"TE_func":     "exit_error",
 	"GUI_line_num":	"1"
@@ -66,47 +83,42 @@ def start():
 	set_datetime_variable("STARTTIME","STARTTIME-DATE","STARTTIME-TIME")
 	set_datetime_variable("STOPTIME","STOPTIME-DATE","STOPTIME-TIME")
 	set_sbk_file("StockMarket","EVENT-PATTERN")
-	copy_variable("A-TIME","STARTTIME")
+	copy_variable("A-STARTTIME","STARTTIME")
 
 def found_A():
 	print("found_A")
-	copy_variable("A-TIME","TIME")
-	#AVG-PRICE = PRICE
+	copy_variable("Aplus-STARTTIME","TIME")
 	set_variable("AVG-PRICE",get_variable_int_value("PRICE",10))
-	#AplusB-SUM = PRICE
-	set_variable("AplusB-SUM",get_variable_int_value("PRICE",10))
-	#AplusB-CNT = 1
-	set_counter("AplusB-CNT",1)
-	#EVENT-PATTERN = ID
+	set_variable("Aplus-SUM",get_variable_int_value("PRICE",10))
+	set_counter("Aplus-CNT",1)
 	copy_variable("EVENT-PATTERN","ID")
-
-	#VOLUME-80 = 80% VOLUME
-	set_variable("VOLUME-80",get_variable_int_value("VOLUME",10) * 0.8)
-	set_variable("AplusB-TIME",str(get_time_variable_value("TIME")))
 
 def not_found_A():
 	print("not_found_A")
 	print_sbk_file()
 
-def found_AplusB():
-	print("found_AplusB")
-	#copy_variable("AplusB-TIME","TIME")
-	set_variable("AplusB-TIME",str(get_time_variable_value("TIME")))
-	#AplusB-CNT += 1
-	incr_counter("AplusB-CNT")
-	#AplusB-SUM += PRICE
-	add_value("AplusB-SUM","PRICE")
-	#AVG-PRICE = AplusB-SUM / AplusB-CNT
-	calc_average("AVG-PRICE","AplusB-SUM","AplusB-CNT")
+def found_Aplus():
+	print("found_Aplus")
 
-	#EVENT-PATTERN.ADD = ID
+def not_found_Aplus():
+	print("not_found_Aplus")
+
+def Aplus_onentry():
+	print("Aplus_onentry")
+
+def found_B():
+	print("found_B")
 	add_string("EVENT-PATTERN","ID")
+	copy_variable("A-STARTTIME","A-FOUND-TIME")
+	print_sbk_file()
 
-	#VOLUME-80 = 80% VOLUME
-	set_variable("VOLUME-80",get_variable_int_value("VOLUME",10) * 0.8)
-
-def not_found_AplusB():
-	print("not_found_AplusB")
+def not_found_B():
+	print("not_found_B")
+	copy_variable("Aplus-STARTTIME","Aplus-FOUND-TIME")
+	incr_counter("Aplus-CNT")
+	add_value("Aplus-SUM","PRICE")
+	calc_average("AVG-PRICE","Aplus-SUM","Aplus-CNT")
+	add_string("EVENT-PATTERN","ID")
 
 def exit_error():
 	print("exit_error")

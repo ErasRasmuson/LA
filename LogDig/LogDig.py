@@ -123,6 +123,10 @@ class ESU:
 			# Talteen myös muuttujiin
 			ana.variables["INT-FOUND-TIMESTAMP"] = self.line_found_timestamp
 
+			# Esa 7.8.2018
+			# Laitetaan loydetty aikaleima talteen myos tilakohtaisesti. Tama vahentaa muuttuja-asetuksia BML-koodissa.
+			ana.variables["%s-FOUND-TIME" % self.name] = self.line_found_timestamp
+
 			# Piirretään löydetty tapahtuma GUI:hin
 			#if self.gui_enable == 1:
 			#	self.draw_event(self.name,self.line_found_timestamp,str(self.line_found_timestamp))
@@ -344,7 +348,7 @@ class ESU:
 	# Esa 3.8.2018
 	def run_expr_code(self,expr_code):
 
-		print("ESU: run expression's code")
+		#print("ESU: run expression's code")
 		try:
 			ret = eval(expr_code)
 			return (True,ret)
@@ -1442,6 +1446,7 @@ class BMU:
 			function_name  = "ana_new." + function_name + "()"
 
 		print("function_name = %s" % function_name)
+
 		code_str = compile(function_name,"<string>","eval")
 		eval(code_str)
 			
@@ -1499,7 +1504,7 @@ class BMU:
 		while 1:
 			
 			# Tulostetaan tämänhetkiset muuttujat ja niiden arvot
-			#self.print_variables()
+			self.print_variables()
 			
 			# Käynnistetään seuraava tila
 			try:
