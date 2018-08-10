@@ -146,48 +146,6 @@ class ESU:
 			print("ESU: %s: Return: Exit" % self.name)
 			return "Exit"
 
-	# Esa 10.8.2018
-	def convert_variable_internal_name(self,var_string):
-
-		# Searches all indexes of "<"
-		indexes = [i for i, ltr in enumerate(var_string) if ltr == "<"]
-		print("indexes: %s" % indexes)
-
-		# Searches variable names
-		var_names_list = []
-		for index in indexes:
-			# Next char should be letter
-			if var_string[index+1].isalpha():
-				end_ind = var_string[index+1:].find(">")
-				if end_ind == -1:
-					print("ESU: ERR: Convert variable names: No \">\" char found in %s" % var_string)
-					return (False,var_string)
-				sub_string = var_string[index+1:index+end_ind+1]
-				#print("  sub_string: %s" % sub_string)
-				# Sub string (variable name) should not include spaces
-				if " " in sub_string:
-					print("ESU: ERR: Convert variable names: Spaces are not allowed in \"%s\"" % sub_string)
-					return (False,var_string)
-				else:
-					var_names_list.append(sub_string)
-			else:
-				print("ESU: Convert variable names: After \"<\" char should be alpha char in %s" % var_string)
-				continue
-
-		#var_name = var_string[var_string.find("<")+1:var_string.find(">")]
-
-		# Converts all variable names
-		for var_name in var_names_list:
-
-			print("var_name: %s" % var_name)
-
-			var_internal_name = "ana.variables[\"%s\"]" % var_name
-			#var_internal_name = "last_read_variables[\"%s\"]" % var_name
-			var_name_ext = "<"+var_name+">"
-			var_string = var_string.replace(var_name_ext,var_internal_name)
-
-		return (True,var_string)
-
 	# Esa 2.8.2018
 	def get_variable_internal_name(self,var_string,var_list):
 		return self.get_variable(var_string,var_list,"N")
@@ -399,8 +357,8 @@ class ESU:
 				if len(expr_str) > 1:
 					cnt += 1
 
-					# Haetaan metamuuttujien nimet lausekkeesta ja muutetaan niiden nimet sisaisten muuttujien nimiksi
-					ret, code_str = self.convert_variable_internal_name(expr_str)
+					# Finds names of meta-variables and converts them into names of internal variables
+					ret, code_str = self.convert_meta_variable_names(expr_str)
 					if ret == False:
 						print("ESU: ERR: Could not convert variables in %s expression in state: %s" % (expr_str,self.name))
 						return False
@@ -1082,6 +1040,7 @@ class ESU:
 class BMU:
 
 	#global variables
+	global debug
 	
 	name="Unknown"
 	states = []
@@ -1457,18 +1416,30 @@ class BMU:
 			print("BMU: Incorrect time-limit: %s" % time_limit_str_with_values)
 			sys.exit()
 
-	def run_function(self,function_name):
+	def run_function(self,expression):
 
-		# Ajetaan funktio
-		if self.analyze_file_mode == "OLD":
-			function_name  = "ana." + function_name + "()"
+		# Kaantaminen voitaisiin tehda vain kerran ensimmaisella kutsulla ? Vain ajo joka kerta.
+
+		# Esa 10.8.2018
+		# If expression (new way)
+		if expression[:2] == "E:":
+			# Finds names of optional meta-variables (with <- and >-chars) and converts them into names of internal variables
+			ret,expression = self.convert_meta_variable_names(expression[2:])
+			print("BMU: run_function: ret: %s, expression: %s" % (ret,expression))
+
+		# Other, name of function (old way)
 		else:
-			function_name  = "ana_new." + function_name + "()"
+			if self.analyze_file_mode == "OLD":
+				expression  = "ana." + expression + "()"
+			else:
+				expression  = "ana_new." + expression + "()"
+			print("function_name = %s" % expression)
 
-		print("function_name = %s" % function_name)
-
-		code_str = compile(function_name,"<string>","eval")
-		eval(code_str)
+		# Compiles expression for eval
+		#code_str = compile(expression,"<string>","eval")
+		# Compiles statements (can include many expressions) for exec
+		code_str = compile(expression,"<string>","exec")
+		exec(code_str)
 			
 	def run(self):
 		
@@ -1524,7 +1495,8 @@ class BMU:
 		while 1:
 			
 			# Tulostetaan tämänhetkiset muuttujat ja niiden arvot
-			self.print_variables()
+			if debug > 0:
+				self.print_variables()
 			
 			# Käynnistetään seuraava tila
 			try:
@@ -1790,6 +1762,57 @@ class BMU:
 			print("  %-20s: %s" % (state,self.states_exit_id_array[state]))
 		"""
 
+#******************************************************************************
+#
+#	FUNCTION:	convert_meta_variable_names
+#
+#******************************************************************************
+# Esa 10.8.2018
+def convert_meta_variable_names(self,var_string):
+
+	# Searches all indexes of "<"
+	indexes = [i for i, ltr in enumerate(var_string) if ltr == "<"]
+	#print("indexes: %s" % indexes)
+
+	# Searches variable names
+	var_names_list = []
+	for index in indexes:
+		# Next char should be letter
+		if var_string[index+1].isalpha():
+			end_ind = var_string[index+1:].find(">")
+			if end_ind == -1:
+				print("ERR: Convert meta-variable names: No \">\" char found in %s" % var_string)
+				return (False,var_string)
+			sub_string = var_string[index+1:index+end_ind+1]
+			#print("  sub_string: %s" % sub_string)
+			# Sub string (variable name) should not include spaces
+			if " " in sub_string:
+				print("ERR: Convert meta-variable names: Spaces are not allowed in \"%s\"" % sub_string)
+				return (False,var_string)
+			else:
+				var_names_list.append(sub_string)
+		else:
+			print("Convert variable meta-names: After \"<\" char should be alpha char in %s" % var_string)
+			continue
+
+	#var_name = var_string[var_string.find("<")+1:var_string.find(">")]
+
+	# Converts all variable names
+	for var_name in var_names_list:
+
+		print("var_name: %s" % var_name)
+
+		var_internal_name = "ana.variables[\"%s\"]" % var_name
+		#var_internal_name = "last_read_variables[\"%s\"]" % var_name
+		var_name_ext = "<"+var_name+">"
+		var_string = var_string.replace(var_name_ext,var_internal_name)
+
+	return (True,var_string)
+
+# This functions is common for ESU and BMU
+ESU.convert_meta_variable_names = convert_meta_variable_names
+BMU.convert_meta_variable_names = convert_meta_variable_names
+
 def import_analyze_file(pathname,filename,mode):
 
 	print("import_analyze_file: %s %s, mode: %s" % (pathname,filename,mode))
@@ -2049,6 +2072,7 @@ def main():
 	global ana
 	global ana_new
 	global legal_state_types
+	global debug
 
 	print("version: %s" % g_version)
 
@@ -2066,6 +2090,8 @@ def main():
 	parser.add_argument('-gui_enable','--gui_enable', dest='gui_enable', type=int, help='gui_enable')
 	parser.add_argument('-gui_seq_draw_mode','--gui_seq_draw_mode', dest='gui_seq_draw_mode', help='gui_seq_draw_mode')
 	parser.add_argument('-ge_kml_enable','--ge_kml_enable', dest='ge_kml_enable', type=int, help='ge_kml_enable')
+	# Esa 10.8.2018
+	parser.add_argument('-debug','--debug', dest='debug', type=int, help='debug', default=0)
 
 	args = parser.parse_args()
 
@@ -2082,7 +2108,10 @@ def main():
 	print("gui_enable        : %s" % args.gui_enable)
 	print("gui_seq_draw_mode : %s" % args.gui_seq_draw_mode)
 	print("ge_kml_enable     : %s" % args.ge_kml_enable)
+	print("debug             : %s" % args.debug)
 	print("\n")
+
+	debug = args.debug
 
 	#sys.exit()
 

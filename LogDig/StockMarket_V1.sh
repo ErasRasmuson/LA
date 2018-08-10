@@ -21,7 +21,8 @@ python ${SCRIPT_PATH}LogDig.py \
 		-analyze_file_mode NEW \
 		-analyzing_mode NORMAL:0 \
 		-gui_enable 0 \
-		-gui_seq_draw_mode "time"
+		-gui_seq_draw_mode "time" \
+		-debug 1
 
 #		-analyzing_mode COMPARE:3 ^
 #		-analyzing_mode NORMAL:0 ^
