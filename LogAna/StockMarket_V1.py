@@ -44,12 +44,13 @@ ESU["A"] = {
 ESU["Aplus"] = {
 	"esu_mode":             "SEARCH_EVENT:First:NextRow",
 	"log_filename_expr":    "StockMarket.csv",
-	"log_varexprs":         "int(<LAST-PRICE>) > ana.variables[\"AVG-PRICE\"]",
+	"log_varexprs":         "int(<LAST-PRICE>) > <AVG-PRICE>",
 	"log_timecol_name":     "TIME",
 	"log_start_time_expr":  "<Aplus-STARTTIME>,1",
 	"log_stop_time_expr":   "<Aplus-STARTTIME>,3600",
 
 	"TF_state":    "B",
+	
 	"TF_func":     "found_Aplus",
 	"TN_state":    "A",
 	"TN_func":     "not_found_Aplus",
@@ -61,7 +62,7 @@ ESU["Aplus"] = {
 ESU["B"] = {
 	"esu_mode":             "SEARCH_EVENT:First:NextRow",
 	"log_filename_expr":    "StockMarket.csv",
-	"log_varexprs":         "float(<LAST-VOLUME>) < float(ana.variables[\"VOLUME\"])*0.8",
+	"log_varexprs":         "float(<LAST-VOLUME>) < float(<VOLUME>)*0.8",
 	"log_timecol_name":     "TIME",
 	"log_start_time_expr":  "<Aplus-FOUND-TIME>,0",
 	"log_stop_time_expr":   "<Aplus-FOUND-TIME>,11",

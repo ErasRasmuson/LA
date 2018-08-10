@@ -146,25 +146,45 @@ class ESU:
 			print("ESU: %s: Return: Exit" % self.name)
 			return "Exit"
 
-	# Esa 3.8.2018
+	# Esa 10.8.2018
 	def convert_variable_internal_name(self,var_string):
 
-		# KESKEN !! Voi olla vain yksi muuttuja lausekkeessa,
-		# <- ja >-vertailumerkit voi sotkea !
-		# Pilkkua ei saa kayttaa itse lausekkeissa !
-
-		keys = ['<','>']
-		indexes = [var_string.index(key) for key in keys if key in var_string]
+		# Searches all indexes of "<"
+		indexes = [i for i, ltr in enumerate(var_string) if ltr == "<"]
 		print("indexes: %s" % indexes)
 
-		var_name = var_string[var_string.find("<")+1:var_string.find(">")]
+		# Searches variable names
+		var_names_list = []
+		for index in indexes:
+			# Next char should be letter
+			if var_string[index+1].isalpha():
+				end_ind = var_string[index+1:].find(">")
+				if end_ind == -1:
+					print("ESU: ERR: Convert variable names: No \">\" char found in %s" % var_string)
+					return (False,var_string)
+				sub_string = var_string[index+1:index+end_ind+1]
+				#print("  sub_string: %s" % sub_string)
+				# Sub string (variable name) should not include spaces
+				if " " in sub_string:
+					print("ESU: ERR: Convert variable names: Spaces are not allowed in \"%s\"" % sub_string)
+					return (False,var_string)
+				else:
+					var_names_list.append(sub_string)
+			else:
+				print("ESU: Convert variable names: After \"<\" char should be alpha char in %s" % var_string)
+				continue
 
-		#print("var_name: %s" % var_name)
+		#var_name = var_string[var_string.find("<")+1:var_string.find(">")]
 
-		var_internal_name = "ana.variables[\"%s\"]" % var_name
-		#var_internal_name = "last_read_variables[\"%s\"]" % var_name
-		var_name_ext = "<"+var_name+">"
-		var_string = var_string.replace(var_name_ext,var_internal_name)
+		# Converts all variable names
+		for var_name in var_names_list:
+
+			print("var_name: %s" % var_name)
+
+			var_internal_name = "ana.variables[\"%s\"]" % var_name
+			#var_internal_name = "last_read_variables[\"%s\"]" % var_name
+			var_name_ext = "<"+var_name+">"
+			var_string = var_string.replace(var_name_ext,var_internal_name)
 
 		return (True,var_string)
 
