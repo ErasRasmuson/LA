@@ -1795,8 +1795,6 @@ def convert_meta_variable_names(self,var_string):
 			print("Convert variable meta-names: After \"<\" char should be alpha char in %s" % var_string)
 			continue
 
-	#var_name = var_string[var_string.find("<")+1:var_string.find(">")]
-
 	# Converts all variable names
 	for var_name in var_names_list:
 

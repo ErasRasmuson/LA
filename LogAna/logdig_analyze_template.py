@@ -101,7 +101,18 @@ outputs_file_path = ""
 
 #------------------------------------------------------------------------------
 
-# Apufunktiot, joita k‰ytet‰‰n tilasiirtm‰funktioissa
+# Utility-functions, that are used in transition functions
+
+# Esa 11.8.2018. This new function can replace almost all old utility-functions ?
+def expr(expression):
+
+	# Is it possible to compile only at the first time ? Or checks it is already compiled ?
+	# Can be little bit faster ?
+
+	ret,expression_new = convert_meta_variable_names_in_functions(expression)
+	code_str = compile(expression_new,"<string>","exec")
+	exec(code_str)
+
 def copy_variable(target_var,source_var):
 
 	try:
@@ -337,3 +348,49 @@ def make_dir_if_no_exist(file_path_name):
 		#		raise
 		except:
 			print("make_dir_if_no_exist: ERROR: file_path_name: %s" % file_path_name)
+
+#******************************************************************************
+#
+#	FUNCTION:	convert_meta_variable_names_in_functions
+#
+#******************************************************************************
+# Esa 11.8.2018 This is almost same function as in LogDig.py. It is possible to combine ?
+def convert_meta_variable_names_in_functions(var_string):
+
+	# Searches all indexes of "<"
+	indexes = [i for i, ltr in enumerate(var_string) if ltr == "<"]
+	#print("indexes: %s" % indexes)
+
+	# Searches variable names
+	var_names_list = []
+	for index in indexes:
+		# Next char should be letter
+		if var_string[index+1].isalpha():
+			end_ind = var_string[index+1:].find(">")
+			if end_ind == -1:
+				print("ERR: Convert meta-variable names: No \">\" char found in %s" % var_string)
+				return (False,var_string)
+			sub_string = var_string[index+1:index+end_ind+1]
+			#print("  sub_string: %s" % sub_string)
+			# Sub string (variable name) should not include spaces
+			if " " in sub_string:
+				print("ERR: Convert meta-variable names: Spaces are not allowed in \"%s\"" % sub_string)
+				return (False,var_string)
+			else:
+				var_names_list.append(sub_string)
+		else:
+			print("Convert variable meta-names: After \"<\" char should be alpha char in %s" % var_string)
+			continue
+
+	# Converts all variable names
+	for var_name in var_names_list:
+
+		print("var_name: %s" % var_name)
+
+		#var_internal_name = "ana.variables[\"%s\"]" % var_name
+		var_internal_name = "variables[\"%s\"]" % var_name
+		#var_internal_name = "last_read_variables[\"%s\"]" % var_name
+		var_name_ext = "<"+var_name+">"
+		var_string = var_string.replace(var_name_ext,var_internal_name)
+
+	return (True,var_string)
