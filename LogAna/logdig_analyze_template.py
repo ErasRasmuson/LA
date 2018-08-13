@@ -89,9 +89,12 @@ state_position_variables = {}
 # Tilan lokin aika-sarakkeen nimi
 state_log_time_column = {}
 
-# Tilojen tapahtumahaun aikarajat
+# Tilojen tapahtumahaun aikaikkunan aikarajat
 state_start_time_limit = {}
 state_stop_time_limit  = {}
+
+# Tilojen aikaikkunan maksimi tapahtumalaskuri. Esa 13.8.2018
+state_timewindow_event_count_max = {}
 
 # Tilojen GUI:n piirtolinjan järjestysnumero 
 state_GUI_line_num = {}

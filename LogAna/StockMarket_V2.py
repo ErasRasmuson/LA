@@ -67,7 +67,9 @@ ESU["B"] = {
 	"log_varexprs":         "float(<LAST-VOLUME>) < float(<VOLUME>)*0.8",
 	"log_timecol_name":     "TIME",
 	"log_start_time_expr":  "<Aplus-FOUND-TIME>,0",
-	"log_stop_time_expr":   "<Aplus-FOUND-TIME>,11",
+	#"log_stop_time_expr":   "<Aplus-FOUND-TIME>,11",
+	"log_stop_time_expr":   "<STOPTIME>,0",
+	"log_events_max":   	"2",
 
 	"TF_state":    "A",
 	"TF_func":     "S:<EVENT-PATTERN> += \",\" + <ID>; \

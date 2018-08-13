@@ -627,7 +627,8 @@ class ESU:
 		#	print("ESU: ERR: Not found datafile: %s" % datafile_name)
 		#	return self.onexit(-1)
 		
-	def read_logfile(self,logfile_name,start_time,stop_time,state_type_param,state_type_param2,serial_found_cnt):
+	def read_logfile(self,logfile_name,start_time,stop_time,state_timewindow_event_count_max,
+					 state_type_param,state_type_param2,serial_found_cnt):
 		
 		last_read_variables = {}
 		self.last_found_variables = {}
@@ -713,6 +714,13 @@ class ESU:
 			#column_name = column_name.lstrip().rstrip()
 			last_read_variables[column_name]=""
 
+		# If log_events_max-parameter is used, enables event counts in timewindow. Esa 13.8.2018
+		timewindow_event_count = 0
+		timewindow_event_count_enabled = False
+		if len(state_timewindow_event_count_max) > 0:
+			timewindow_event_count_enabled = True
+			state_timewindow_event_count_max = int(state_timewindow_event_count_max)
+
 		# Käydään lokirivit läpi alkaen tietystä rivistä (indeksistä)
 		# Ei saa sisältää otsikko riviä !
 		lines_len = len(self.log_lines)
@@ -740,7 +748,7 @@ class ESU:
 				print(" --- ESU: Number of columns are illegal: %s - %s" % (line_list_len,self.log_column_numbers))
 				continue
 			
-			self.line_sel_counter += 1
+			#self.line_sel_counter += 1
 			
 			# Luetaan rivin sarakkeiden arvot luettujen muuttujiin
 			col_index = 0
@@ -769,9 +777,10 @@ class ESU:
 			#if self.gui_enable == 1:
 			#	self.draw_event(self.name,line_timestamp,"")
 
-			# Tarkistetaan aikaväli
+			# Checks boundaries of timewindow
 			if line_timestamp >= start_time:
 				if line_timestamp < stop_time:
+
 					self.line_sel_counter += 1
 					#print("ESU: Line %s in time-gap: %s -- %s" % (line_list,ana.variables["START-TIMESTAMP"],ana.variables["STOP-TIMESTAMP"]))
 					#print("ESU: Line %s in time-gap: %s -- %s" % (line_list,start_time,stop_time))
@@ -809,17 +818,6 @@ class ESU:
 							print("ESU: ERR: in expression of log_varexprs-parameter")
 							return self.onexit(-1)
 
-					#for expr in self.state_log_variables_exprs_list:
-					#	expr_count += 1
-					#	print("ESU: Expr %d: %s" % (expr_count,expr))
-					#	try:
-					#		ret = eval(expr)
-					#	except:
-					#		print("ESU: ERR: in expression of log_varexprs-parameter")
-					#		return self.onexit(-1)
-					#	if ret == True:
-					#		expr_ok_count += 1
-
 					# Esa 2.8.2018
 					#if ok_count == var_count:
 					# Jos muuttujat (log_varnames) ja lausekkeet (log_varexprs) ok
@@ -856,6 +854,16 @@ class ESU:
 
 					# Pitää myös "poistaa" käytetty viesti, että sitä ei oteta uudestaan !!??
 
+					# Esa 13.8.2018
+					# Counts events in timewindow, if it is enabled.
+					if (timewindow_event_count_enabled == True):
+						timewindow_event_count += 1
+						# If max number of events has been reached, return "Not found"
+						if timewindow_event_count == state_timewindow_event_count_max:
+							print("ESU: Max number of events: %d in timewindow" %
+								  (timewindow_event_count))
+							return self.onexit(0)
+
 				else:
 					# Ei löytynyt aikaväliltä, lopetetaan haku. Ei lueta turhaan loppua !
 					print(" *** ESU: Stops searching: stop time is exceeded: %s" % line_timestamp)
@@ -879,8 +887,10 @@ class ESU:
 						
 		return self.onexit(0)
 		
-	def run(self,state_counter,start_time,stop_time,logfile_name,datafile_name,state_log_time_column,
-			state_log_variables,state_log_variables_exprs,state_data_variables,state_position_variables,state_type,output_files_path):
+	def run(self,state_counter,start_time,stop_time,state_timewindow_event_count_max,
+			logfile_name,datafile_name,state_log_time_column,
+			state_log_variables,state_log_variables_exprs,state_data_variables,
+			state_position_variables,state_type,output_files_path):
 
 
 		self.esu_run_counter += 1
@@ -891,6 +901,11 @@ class ESU:
 		print("ESU: Name: %s, cnt = %s" % (self.name,self.esu_run_counter))
 		print("ESU: Start_time = %s" % (start_time))
 		print("ESU: Stop_time  = %s" % (stop_time))
+
+		# Esa 13.8.2018
+		if len(state_timewindow_event_count_max) > 0:
+			print("ESU: Max number of events in timewindow (start-stop time) : %s" % state_timewindow_event_count_max)
+
 		print("ESU: read orig logfile_name  : %s" % logfile_name)
 		if len(datafile_name) > 0:
 			print("ESU: read orig datafile_name : %s" % datafile_name)
@@ -953,7 +968,7 @@ class ESU:
 				state_data_variables = "SERIAL-ID"
 				ana.variables["SERIAL-ID"] = serial_var
 				ret = self.run_esu_state(state_log_variables,state_data_variables,state_position_variables,
-							logfile_name,datafile_name,start_time,stop_time,
+							logfile_name,datafile_name,start_time,stop_time,state_timewindow_event_count_max,
 							state_type_param,state_type_param2,serial_found_cnt)
 
 				if ret == "Found":
@@ -985,7 +1000,7 @@ class ESU:
 		# Muuten haetaan vain yksi tapahtuma
 		else:
 			ret =  self.run_esu_state(state_log_variables,state_log_variables_exprs,state_data_variables,state_position_variables,
-							logfile_name,datafile_name,start_time,stop_time,
+							logfile_name,datafile_name,start_time,stop_time,state_timewindow_event_count_max,
 							state_type_param,state_type_param2,0)
 
 			# Lopputekstit klm-tiedostoon
@@ -995,7 +1010,7 @@ class ESU:
 			return ret
 		
 	def run_esu_state(self,state_log_variables,state_log_variables_exprs,state_data_variables,state_position_variables,
-					logfile_name,datafile_name,start_time,stop_time,
+					logfile_name,datafile_name,start_time,stop_time,state_timewindow_event_count_max,
 					state_type_param,state_type_param2,serial_found_cnt):
 
 		# Luetaan inputtina saadut loki-, data- ja paikkatieto-muuttujat
@@ -1030,7 +1045,8 @@ class ESU:
 				self.onexit(-1)
 		
 		# Luetaan lokitiedosto ja haetaan sieltä tiedot log-muuttujilla halutulla aikavälillä
-		return self.read_logfile(logfile_name,start_time,stop_time,state_type_param,state_type_param2,serial_found_cnt)
+		return self.read_logfile(logfile_name,start_time,stop_time,state_timewindow_event_count_max,
+								 state_type_param,state_type_param2,serial_found_cnt)
 
 #******************************************************************************
 #       
@@ -1106,7 +1122,7 @@ class BMU:
 	def __init__(self,name,analyze_file_mode,states,state_order,transition_names,start_state_name,transition,transition_function,
 				 state_onentry_function,state_onexit_function,end_state_name,state_logfiles,
 				 state_datafiles,state_settings,state_log_time_column,state_log_variables,state_log_variables_exprs,state_data_variables,
-				 state_position_variables,state_type,state_start_time_limit,state_stop_time_limit,
+				 state_position_variables,state_type,state_start_time_limit,state_stop_time_limit,state_timewindow_event_count_max,
 				 gui_enable,gui_seq_draw_mode,ge_kml_enable,gui,state_GUI_line_num,analyzing_mode,output_files_path,
 				 logfiles_data):
 				 
@@ -1154,7 +1170,9 @@ class BMU:
 		#print("self.state_start_time_limit = %s\n" % self.state_start_time_limit)
 		self.state_stop_time_limit=state_stop_time_limit
 		#print("self.state_stop_time_limit = %s\n" % self.state_stop_time_limit)
-		
+		self.state_timewindow_event_count_max=state_timewindow_event_count_max # Esa 13.8.2018
+		#print("self.state_timewindow_event_count_max = %s\n" % self.state_timewindow_event_count_max)
+
 		self.gui_enable = gui_enable
 		#print("self.gui_enable = %s\n" % self.gui_enable)
 		self.gui = gui		
@@ -1423,7 +1441,7 @@ class BMU:
 		if statement[:2] == "S:":
 			# Finds names of optional meta-variables (with <- and >-chars) and converts them into names of internal variables
 			ret,statement = self.convert_meta_variable_names(statement[2:])
-			print("BMU: run_function: ret: %s, expression: %s" % (ret,statement))
+			print("BMU: run_function: ret: %s, statement: %s" % (ret,statement))
 
 		# Other, name of function (old way)
 		else:
@@ -1490,6 +1508,9 @@ class BMU:
 
 		self.trace_cnt = 0
 
+		# Esa 13.8.2018
+		realized_state_transition_list = []
+
 		# Ikiluuppi
 		while 1:
 			
@@ -1551,6 +1572,12 @@ class BMU:
 				if new_state_name == self.end_state_name:
 					print("BMU: ESU: %s end state\n" % (self.current_state_name))
 
+					# List of state and their transitions for debug. Esa 13.8.2018
+					if debug > 0:
+						#print("realized_state_transition_list: \n%s" % realized_state_transition_list)
+						for state_data in realized_state_transition_list:
+							print("%s" % state_data)
+
 					# Tulostetaan tilojen tapahtumasekvenssi GUI:hin
 					if self.gui_enable == 1:
 						self.drawEventSequence()
@@ -1601,6 +1628,9 @@ class BMU:
 				# Lokitiedoston (haku)muuttujien lausekkeet. Esa 2.8.2018
 				state_log_variables_exprs=self.state_log_variables_exprs[self.current_state_name]
 
+				# Lokitiedoston (haku)muuttujien lausekkeet. Esa 13.8.2018
+				state_timewindow_event_count_max=self.state_timewindow_event_count_max[self.current_state_name]
+
 				# Datatiedoston (haku)muuttujat
 				state_data_variables=self.state_data_variables[self.current_state_name]
 				
@@ -1626,6 +1656,7 @@ class BMU:
 				ret = new_esu_state.run(self.state_counter,
 									self.start_time,
 									self.stop_time,
+									state_timewindow_event_count_max,
 									logfile_name,
 									datafile_name,
 									state_log_time_column,
@@ -1651,6 +1682,11 @@ class BMU:
 					print("BMU: No onexit_function for state: %s" % self.current_state_name)
 					
 				print("BMU: ESU: %s return: %s" % (self.current_state_name,ret))
+
+				# List of state and their transitions for debug. Esa 13.8.2018
+				if debug > 0:
+					realized_state_transition_list.append("%3d %-5s %s" %
+								(self.state_counter,self.current_state_name,ret[0]))
 
 				if ret == "Found":
 
@@ -1881,6 +1917,9 @@ def import_analyze_file(pathname,filename,mode):
 			ana.state_log_variables[var_key] = ""
 			ana.state_log_variables_exprs[var_key] = ""
 
+			# Esa 13.8.2018
+			ana.state_timewindow_event_count_max[var_key] = ""
+
 			for var_key2 in var_value.keys():
 				var_value2 = var_value[var_key2]
 				print("    ESU: %s = %s" % (var_key2,var_value2))
@@ -1899,6 +1938,8 @@ def import_analyze_file(pathname,filename,mode):
 					ana.state_start_time_limit[var_key] = var_value2				
 				elif var_key2 == "log_stop_time_expr":
 					ana.state_stop_time_limit[var_key] = var_value2
+				elif var_key2 == "log_events_max":
+					ana.state_timewindow_event_count_max[var_key] = var_value2
 
 				elif var_key2 == "ssd_lat_col_name":
 					state_position_lat_variable = var_value2
@@ -1991,6 +2032,7 @@ def analyze_logs(args,gui,source,trace_mode):
 						ana.state_type,
 						ana.state_start_time_limit,
 						ana.state_stop_time_limit,
+			 			ana.state_timewindow_event_count_max, # Esa 13.8.2018
 						args.gui_enable,
 						args.gui_seq_draw_mode,
 						args.ge_kml_enable,
