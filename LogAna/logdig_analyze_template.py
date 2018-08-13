@@ -103,14 +103,14 @@ outputs_file_path = ""
 
 # Utility-functions, that are used in transition functions
 
-# Esa 11.8.2018. This new function can replace almost all old utility-functions ?
-def expr(expression):
+# Esa 13.8.2018. This new function can replace almost all old utility-functions ?
+def statem(statement):
 
 	# Is it possible to compile only at the first time ? Or checks it is already compiled ?
 	# Can be little bit faster ?
 
-	ret,expression_new = convert_meta_variable_names_in_functions(expression)
-	code_str = compile(expression_new,"<string>","exec")
+	ret,statement_new = convert_meta_variable_names_in_functions(statement)
+	code_str = compile(statement_new,"<string>","exec")
 	exec(code_str)
 
 def copy_variable(target_var,source_var):

@@ -359,7 +359,7 @@ class ESU:
 
 					# Finds names of meta-variables and converts them into names of internal variables
 					ret, code_str = self.convert_meta_variable_names(expr_str)
-					if ret == False:
+					if ret == 0:
 						print("ESU: ERR: Could not convert variables in %s expression in state: %s" % (expr_str,self.name))
 						return False
 
@@ -1416,29 +1416,28 @@ class BMU:
 			print("BMU: Incorrect time-limit: %s" % time_limit_str_with_values)
 			sys.exit()
 
-	def run_function(self,expression):
+	def run_function(self,statement):
 
-		# Kaantaminen voitaisiin tehda vain kerran ensimmaisella kutsulla ? Vain ajo joka kerta.
-
-		# Esa 10.8.2018
-		# If expression (new way)
-		if expression[:2] == "E:":
+		# Esa 13.8.2018
+		# If statement, which can include expressions (new way)
+		if statement[:2] == "S:":
 			# Finds names of optional meta-variables (with <- and >-chars) and converts them into names of internal variables
-			ret,expression = self.convert_meta_variable_names(expression[2:])
-			print("BMU: run_function: ret: %s, expression: %s" % (ret,expression))
+			ret,statement = self.convert_meta_variable_names(statement[2:])
+			print("BMU: run_function: ret: %s, expression: %s" % (ret,statement))
 
 		# Other, name of function (old way)
 		else:
 			if self.analyze_file_mode == "OLD":
-				expression  = "ana." + expression + "()"
+				statement  = "ana." + statement + "()"
 			else:
-				expression  = "ana_new." + expression + "()"
-			print("function_name = %s" % expression)
+				statement  = "ana_new." + statement + "()"
+			print("function_name = %s" % statement)
 
 		# Compiles expression for eval
 		#code_str = compile(expression,"<string>","eval")
 		# Compiles statements (can include many expressions) for exec
-		code_str = compile(expression,"<string>","exec")
+		# Compling only in at first time to speedup computing ?
+		code_str = compile(statement,"<string>","exec")
 		exec(code_str)
 			
 	def run(self):
@@ -1767,7 +1766,7 @@ class BMU:
 #	FUNCTION:	convert_meta_variable_names
 #
 #******************************************************************************
-# Esa 10.8.2018
+# Esa 13.8.2018
 def convert_meta_variable_names(self,var_string):
 
 	# Searches all indexes of "<"
@@ -1782,13 +1781,13 @@ def convert_meta_variable_names(self,var_string):
 			end_ind = var_string[index+1:].find(">")
 			if end_ind == -1:
 				print("ERR: Convert meta-variable names: No \">\" char found in %s" % var_string)
-				return (False,var_string)
+				return (0,var_string)
 			sub_string = var_string[index+1:index+end_ind+1]
 			#print("  sub_string: %s" % sub_string)
 			# Sub string (variable name) should not include spaces
 			if " " in sub_string:
 				print("ERR: Convert meta-variable names: Spaces are not allowed in \"%s\"" % sub_string)
-				return (False,var_string)
+				return (0,var_string)
 			else:
 				var_names_list.append(sub_string)
 		else:
@@ -1796,16 +1795,17 @@ def convert_meta_variable_names(self,var_string):
 			continue
 
 	# Converts all variable names
+	var_cnt = 0
 	for var_name in var_names_list:
-
-		print("var_name: %s" % var_name)
+		var_cnt += 1
+		print("Convert variable meta-names: %2d: var_name: %s" % (var_cnt,var_name))
 
 		var_internal_name = "ana.variables[\"%s\"]" % var_name
 		#var_internal_name = "last_read_variables[\"%s\"]" % var_name
 		var_name_ext = "<"+var_name+">"
 		var_string = var_string.replace(var_name_ext,var_internal_name)
 
-	return (True,var_string)
+	return (var_cnt,var_string)
 
 # This functions is common for ESU and BMU
 ESU.convert_meta_variable_names = convert_meta_variable_names

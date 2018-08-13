@@ -34,7 +34,7 @@ ESU["A"] = {
 	"log_stop_time_expr":   "<STOPTIME>,0",
 
 	"TF_state":    "Aplus",
-	"TF_func":     "E:<Aplus-STARTTIME> = <TIME>; \
+	"TF_func":     "S:<Aplus-STARTTIME> = <TIME>; \
 					<AVG-PRICE> = int(<PRICE>); \
 					<Aplus-SUM> = int(<PRICE>); \
 					<Aplus-CNT> = int(1); \
@@ -54,9 +54,9 @@ ESU["Aplus"] = {
 	"log_stop_time_expr":   "<Aplus-STARTTIME>,3600",
 
 	"TF_state":    "B",
-	"TF_func":     "found_Aplus",
+	"TF_func":     "S:<EVENT-PATTERN> += \",\" + <ID>",
 	"TN_state":    "A",
-	"TN_func":     "E:print(\"not_found_Aplus\")",
+	"TN_func":     "S:print(\"not_found_Aplus\")",
 	"TE_state":    "STOP",
 	"TE_func":     "exit_error",
 	"GUI_line_num":	"1"
@@ -70,9 +70,14 @@ ESU["B"] = {
 	"log_stop_time_expr":   "<Aplus-FOUND-TIME>,11",
 
 	"TF_state":    "A",
-	"TF_func":     "found_B",
+	"TF_func":     "S:<EVENT-PATTERN> += \",\" + <ID>; \
+				   <A-STARTTIME> = <A-FOUND-TIME>; \
+				   ana.print_sbk_file()",
 	"TN_state":    "Aplus",
-	"TN_func":     "not_found_B",
+	"TN_func":     "S:<Aplus-STARTTIME> = <Aplus-FOUND-TIME>; \
+				   <Aplus-CNT> += 1; \
+				   <Aplus-SUM> += int(<PRICE>); \
+				   <AVG-PRICE> = <Aplus-SUM> / <Aplus-CNT>",
 	"TE_state":    "STOP",
 	"TE_func":     "exit_error",
 	"GUI_line_num":	"2"
@@ -87,7 +92,7 @@ def start():
 	set_datetime_variable("STOPTIME","STOPTIME-DATE","STOPTIME-TIME")
 	set_sbk_file("StockMarket","EVENT-PATTERN")
 	#copy_variable("A-STARTTIME","STARTTIME")
-	expr("<A-STARTTIME> = <STARTTIME>")
+	statem("<A-STARTTIME> = <STARTTIME>")
 
 #def found_A():
 #	print("found_A")
@@ -104,27 +109,27 @@ def not_found_A():
 def found_Aplus():
 	print("found_Aplus")
 	#add_string("EVENT-PATTERN","ID")
-	expr("<EVENT-PATTERN> += \",\" + <ID>")
+	statem("<EVENT-PATTERN> += \",\" + <ID>")
 
 def found_B():
 	print("found_B")
 	#add_string("EVENT-PATTERN","ID")
-	expr("<EVENT-PATTERN> += \",\" + <ID>")
+	statem("<EVENT-PATTERN> += \",\" + <ID>")
 	#copy_variable("A-STARTTIME","A-FOUND-TIME")
-	expr("<A-STARTTIME> = <A-FOUND-TIME>")
+	statem("<A-STARTTIME> = <A-FOUND-TIME>")
 
 	print_sbk_file()
 
 def not_found_B():
 	print("not_found_B")
 	#copy_variable("Aplus-STARTTIME","Aplus-FOUND-TIME")
-	expr("<Aplus-STARTTIME> = <Aplus-FOUND-TIME>")
+	statem("<Aplus-STARTTIME> = <Aplus-FOUND-TIME>")
 	#incr_counter("Aplus-CNT")
-	expr("<Aplus-CNT> += 1")
+	statem("<Aplus-CNT> += 1")
 	#add_value("Aplus-SUM","PRICE")
-	expr("<Aplus-SUM> += int(<PRICE>)")
+	statem("<Aplus-SUM> += int(<PRICE>)")
 	#calc_average("AVG-PRICE","Aplus-SUM","Aplus-CNT")
-	expr("<AVG-PRICE> = <Aplus-SUM> / <Aplus-CNT>")
+	statem("<AVG-PRICE> = <Aplus-SUM> / <Aplus-CNT>")
 
 def exit_error():
 	print("exit_error")
