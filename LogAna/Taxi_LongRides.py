@@ -34,7 +34,9 @@ ESU["BEGIN"] = {
 	"log_stop_time_expr":   "<STOPTIME>,0",
 
 	"TF_state":    "END",
-	"TF_func":     "found_begin",
+	#"TF_func":     "found_begin",
+	"TF_func":     "S:<SET-RIDEID> = <rideId>; \
+				   <STARTTIME-BEGIN> = <startTime>",
 	"TN_state":    "STOP",
 	"TN_func":     "exit_normal",
 	"TE_state":    "STOP",
@@ -52,7 +54,9 @@ ESU["END"] = {
 	"TF_state":    "BEGIN",
 	"TF_func":     "found_end",
 	"TN_state":    "BEGIN",
-	"TN_func":     "not_found_end",
+	#"TN_func":     "not_found_end",
+	"TN_func":     "S:<STARTTIME-BEGIN> = <startTime>; \
+					ana.print_sbk_file()",
 	"TE_state":    "STOP",
 	"TE_func":     "exit_error",
 	"GUI_line_num":	"1"
@@ -66,22 +70,26 @@ def start():
 	set_datetime_variable("STARTTIME","STARTTIME-DATE","STARTTIME-TIME")
 	set_datetime_variable("STOPTIME","STOPTIME-DATE","STOPTIME-TIME")
 	set_sbk_file("Taxi_LongRides","SET-RIDEID","startTime","endTime")
-	copy_variable("STARTTIME-BEGIN","STARTTIME")
+	#copy_variable("STARTTIME-BEGIN","STARTTIME")
+	statem("<STARTTIME-BEGIN> = <STARTTIME>")
 
 	logfiles_data.read("/home/esa/projects/LA/LogFile/PreProsessed/TaxiRides/TaxiRides_small.csv","startTime")
 	logfiles_data.transform_operation_keyby("/home/esa/projects/LA/LogFile/PreProsessed/TaxiRides/TaxiRides_small.csv","rideId")
 
 def found_begin():
 	print("found_begin")
-	copy_variable("SET-RIDEID","rideId")
-	copy_variable("STARTTIME-BEGIN","startTime")
+	#copy_variable("SET-RIDEID","rideId")
+	#copy_variable("STARTTIME-BEGIN","startTime")
+	statem("<SET-RIDEID> = <rideId>")
+	statem("<STARTTIME-BEGIN> = <startTime>")
 
 def found_end():
 	print("found_end")
 
 def not_found_end():
 	print("not_found_end")
-	copy_variable("STARTTIME-BEGIN","startTime")
+	#copy_variable("STARTTIME-BEGIN","startTime")
+	statem("<STARTTIME-BEGIN> = <startTime>")
 	print_sbk_file()
 
 def exit_normal():

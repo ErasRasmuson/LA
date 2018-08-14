@@ -2175,7 +2175,7 @@ def main():
 		args.state_order = ana.state_order
 
 		app = QApplication(sys.argv)
-		gui2 = GUI_AnalyzeArea(args,"LOGDIG: TRACES OF LOGS",analyze_area_x,analyze_area_y,1100,1000,0,0,1.0,
+		gui2 = GUI_AnalyzeArea(args,"LOGDIG: TRACES OF LOGS",analyze_area_x,analyze_area_y,1100,800,0,0,1.0,
 				analyze_logs,ana.state_GUI_line_num)
 
 		sys.exit(app.exec_())

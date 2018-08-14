@@ -12,7 +12,7 @@ ANALYZE_FILE="StockMarket_V2"
 python ${SCRIPT_PATH}LogDig.py \
 		-date 06.08.2018 \
 		-start_time 10:00:00 \
-		-stop_time 12:00:00 \
+		-stop_time 10:02:00 \
 		-input_logs_path $LOGS_PATH \
 		-input_ssd_path $LOGS_PATH \
 		-output_files_path $RESULT_PATH \
