@@ -1,0 +1,6 @@
+Bus-Time,Bus-Id,Bus-Msg,Bus-Line,Bus-TStop,Bus-Pos,Bus-StopIn,Bus-StopOut
+2018-11-26 10:00:10,B1,LOGIN,L1,TBS1,-,-,-
+2018-11-26 10:01:00,B1,LOCAT,-,-,1,-,TBS1
+2018-11-26 10:10:00,B1,LOCAT,-,-,2,BS1,-
+2018-11-26 10:12:00,B1,LOCAT,-,-,3,-,BS1
+2018-11-26 10:20:00,B1,LOCAT,-,-,4,BS2,-
