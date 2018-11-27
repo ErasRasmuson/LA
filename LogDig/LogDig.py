@@ -1922,8 +1922,61 @@ def import_analyze_file(pathname,filename,mode):
 			ana.state_timewindow_event_count_max[var_key] = ""
 
 			# Esa 27.11.2018. Default for GUI line number.
-			ana.state_GUI_line_num[var_key] = ana.ESU_counter
+			ana.state_GUI_line_num[var_key] = ana.ESU_counter	
 			
+			# Esa 27.11.2018. Use default values, if they are exist in ESU_DEFAULTS.
+			try:
+				for def_key in ana_new.ESU_DEFAULTS.keys():
+					def_value = ana_new.ESU_DEFAULTS[def_key]
+					print("    ESU_DEFAULT: %s = %s" % (def_key,def_value))
+					
+					if def_key == "esu_mode":
+						ana.state_type[var_key] = def_value
+					elif def_key == "log_filename_expr":
+						ana.state_logfiles[var_key] = def_value
+					elif def_key == "log_varnames":
+						ana.state_log_variables[var_key] = def_value
+					elif def_key == "log_varexprs":
+						ana.state_log_variables_exprs[var_key] = def_value
+					elif def_key == "log_timecol_name":
+						ana.state_log_time_column[var_key] = def_value				
+					elif def_key == "log_start_time_expr":
+						ana.state_start_time_limit[var_key] = def_value				
+					elif def_key == "log_stop_time_expr":
+						ana.state_stop_time_limit[var_key] = def_value
+					elif def_key == "log_events_max":
+						ana.state_timewindow_event_count_max[var_key] = def_value
+
+					elif def_key == "ssd_lat_col_name":
+						state_position_lat_variable = def_value
+					elif def_key == "ssd_lon_col_name":
+						state_position_lon_variable = def_value
+					elif def_key == "ssd_filename_expr":
+						ana.state_datafiles[var_key] = def_value
+					elif def_key == "ssd_varnames":
+						ana.state_data_variables[var_key] = def_value
+					
+					elif def_key == "TF_state":
+						ana.transition[var_key][0] = def_value
+					elif def_key == "TF_func":
+						ana.transition_function[var_key][0] = def_value
+					elif def_key == "TN_state":
+						ana.transition[var_key][1] = def_value
+					elif def_key == "TN_func":
+						ana.transition_function[var_key][1] = def_value
+					elif def_key == "TE_state":
+						ana.transition[var_key][2] = def_value
+					elif def_key == "TE_func":
+						ana.transition_function[var_key][2] = def_value
+						
+					elif def_key == "onentry_func":
+						ana.state_onentry_function[var_key] = def_value
+					elif def_key == "onexit_func":
+						ana.state_onexit_function[var_key] = def_value
+			except:
+				print("    ESU_DEFAULTS not exists ")
+			
+			# Reads values, overwrites default values
 			for var_key2 in var_value.keys():
 				var_value2 = var_value[var_key2]
 				print("    ESU: %s = %s" % (var_key2,var_value2))
