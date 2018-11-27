@@ -1689,7 +1689,7 @@ class BMU:
 								(self.state_counter,self.current_state_name,ret[0]))
 
 				if ret == "Found":
-
+					
 					self.state_found_counter += 1
 					time_found = ana.variables["INT-FOUND-TIMESTAMP"]
 					self.state_found_serial_metadata_counter[self.current_state_name] = 0
@@ -1697,6 +1697,7 @@ class BMU:
 					# Huom! sarjahaku piirretään vaikka tulisi "Not found"
 					# Jos käytetty sarjahakua ja myös löydetty tapahtumia
 					serial_found_cnt = int(ana.variables["INT-SERIAL-FOUND-COUNTER"])
+					
 					if serial_found_cnt > 0:
 
 						for i in range(serial_found_cnt):
@@ -1706,11 +1707,11 @@ class BMU:
 							time_found = ser_time_found
 
 						self.state_found_serial_metadata_counter[self.current_state_name] = serial_found_cnt
-
+					
 					#self.state_found_metadata[self.current_state_name] = time_found,self.state_found_counter
 					state_gui_order = self.state_GUI_line_num[self.current_state_name]
 					self.state_found_metadata[self.current_state_name] = time_found,self.state_found_counter,state_gui_order
-
+				
 				# Päivitetään tämänhetken tilanne lopputuloksiin
 				self.update_results(ret,self.current_state_name)
 
@@ -1920,6 +1921,9 @@ def import_analyze_file(pathname,filename,mode):
 			# Esa 13.8.2018
 			ana.state_timewindow_event_count_max[var_key] = ""
 
+			# Esa 27.11.2018. Default for GUI line number.
+			ana.state_GUI_line_num[var_key] = ana.ESU_counter
+			
 			for var_key2 in var_value.keys():
 				var_value2 = var_value[var_key2]
 				print("    ESU: %s = %s" % (var_key2,var_value2))

@@ -5,7 +5,7 @@ VARIABLES = {
 	"STARTTIME-TIME": 	"10:00:00",
 	"STOPTIME-DATE":	"2018-11-26",
 	"STOPTIME-TIME": 	"10:30:00",
-	"MAX_LOGIN-TAT": 	"600",
+	"MAX-LOGIN-TAT": 	"600",
 	"MAX-TAT-ARRIVE":	"1200",
 	"BUS":				"B1",
 	"LINE":				"L1",
@@ -25,7 +25,6 @@ ESU["TAT"] = {
 
 	"TF_state":    "LOGIN",
 	"TF_func":     "S:<TAT-TIME> = <Mon-Time>;",
-	#"TF_func":     "",
 	"TN_state":    "STOP",
 	"TN_func":     "",
 	"TE_state":    "STOP",
@@ -36,7 +35,7 @@ ESU["LOGIN"] = {
 	"log_filename_expr":    "ITS_4_buses.csv",
 	"log_varexprs":         "<LAST-Bus-Msg>==\"LOGIN\" and <LAST-Bus-Id>==<Mon-Bus-Id>",
 	"log_timecol_name":     "Bus-Time",
-	"log_start_time_expr":  "<TAT-FOUND-TIME>,-<MAX_LOGIN_TAT>",
+	"log_start_time_expr":  "<TAT-FOUND-TIME>,-<MAX-LOGIN-TAT>",
 	"log_stop_time_expr":   "<TAT-FOUND-TIME>,0",
 
 	"TF_state":    "LEAVE",
@@ -47,7 +46,7 @@ ESU["LOGIN"] = {
 ESU["LEAVE"] = {
 	"esu_mode":             "SEARCH_EVENT:First",
 	"log_filename_expr":    "ITS_4_buses.csv",
-	"log_varexprs":         "<Bus-Id>==<Mon-Bus-Id> and <Bus-StopOut>==<TBSTOP>",
+	"log_varexprs":         "<LAST-Bus-Id>==<LAST-Mon-Bus-Id> and <LAST-Bus-StopOut>==<TBSTOP>",
 	"log_timecol_name":     "Bus-Time",
 	"log_start_time_expr":  "<LEAVE-START-TIME>,0",
 	"log_stop_time_expr":   "<TAT-TIME>,+<MAX-TAT-ARRIVE>",
@@ -60,7 +59,7 @@ ESU["LEAVE"] = {
 ESU["ARRIVE"] = {
 	"esu_mode":             "SEARCH_EVENT:First",
 	"log_filename_expr":    "ITS_4_buses.csv",
-	"log_varexprs":         "<Bus-Id>==<Mon-Bus-Id> and <Bus-StopIn>==<Mon-BusStop>",
+	"log_varexprs":         "<LAST-Bus-Id>==<LAST-Mon-Bus-Id> and <LAST-Bus-StopIn>==<LAST-Mon-BusStop>",
 	"log_timecol_name":     "Bus-Time",
 	"log_start_time_expr":  "<LEAVE-FOUND-TIME>,0",
 	"log_stop_time_expr":   "<TAT-FOUND-TIME>,+<MAX-TAT-ARRIVE>",
@@ -73,22 +72,22 @@ ESU["ARRIVE"] = {
 ESU["AD"] = {
 	"esu_mode":             "SEARCH_EVENT:Last",
 	"log_filename_expr":    "ITS_4_monitors.csv",
-	"log_varexprs":         "<Mon-Msg>==\"AD\" and <Mon-Bus-Bus>==<Bus-Id>",
+	"log_varexprs":         "<LAST-Mon-Msg>==\"AD\" and <LAST-Mon-Bus-Id>==<LAST-Bus-Id>",
 	"log_timecol_name":     "Mon-Time",
 	"log_start_time_expr":  "<TAT-FOUND-TIME>,0",
 	"log_stop_time_expr":   "<ARRIVE-FOUND-TIME>,0",
 
 	"TF_state":    "TAT2",
-	"TF_func":     "S:<STARTTIME>=<TAT-FOUND-TIME>)",
+	"TF_func":     "S:<STARTTIME>=<TAT-FOUND-TIME>",
 	"TN_state":    "STOP",
 	"TN_func":     ""
 }
 ESU["TAT2"] = {
 	"esu_mode":             "SEARCH_EVENT:First:NextRow",
 	"log_filename_expr":    "ITS_4_monitors.csv",
-	"log_varexprs":         "<Mon-Msg>==\"TAT\" and <Mon-Bus>==<BUS> and <Mon-Line>==<LINE>",
+	"log_varexprs":         "<LAST-Mon-Msg>==\"TAT\" and <LAST-Mon-Bus-Id>==<BUS> and <LAST-Mon-Line>==<LINE>",
 	"log_timecol_name":     "Mon-Time",
-	"log_start_time_expr":  "?",
+	"log_start_time_expr":  "<TAT-FOUND-TIME>,0",
 	"log_stop_time_expr":   "<STOPTIME>,0",
 
 	"TF_state":    "LEAVE",

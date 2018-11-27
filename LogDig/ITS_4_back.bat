@@ -1,7 +1,9 @@
 
 ECHO OFF
 
-SET MY_PATH=D:\Projekti\Koodit\LA
+
+REM SET MY_PATH=D:\Projekti\Koodit\LA
+SET MY_PATH=P:\Projects\LA
 
 SET SCRIPT_PATH=%MY_PATH%\LogDig\
 SET LOGS_PATH=%MY_PATH%\LogFile\PreProsessed\ITS\
