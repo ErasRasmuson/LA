@@ -6,7 +6,7 @@ VARIABLES = {
 	"STOPTIME-DATE":	"2018-11-26",
 	"STOPTIME-TIME": 	"10:30:00",
 	"MAX-LOGIN-TAT":"600", "MAX-TAT-ARRIVE":"1200",
-	"BUS":"B1", "LINE":"L1", "TBSTOP":"TBS1"
+	"BUS":"B1", "LINE":"L1"
 	}
 START = {
 	"state":   "TAT",
@@ -44,7 +44,7 @@ ESU["LOGIN"] = {
 ESU["LEAVE"] = {
 	"esu_mode":             "SEARCH_EVENT:First",
 	"log_filename_expr":    "ITS_4_buses.csv",
-	"log_varexprs":         "<LAST-Bus-Id>==<Mon-Bus-Id> and <LAST-Bus-StopOut>==<TBSTOP>",
+	"log_varexprs":         "<LAST-Bus-Id>==<Mon-Bus-Id> and <LAST-Bus-StopOut>==<Bus-TStop>",
 	"log_timecol_name":     "Bus-Time",
 	"log_start_time_expr":  "<LEAVE-START-TIME>,0",
 	"log_stop_time_expr":   "<TAT-TIME>,+<MAX-TAT-ARRIVE>",
