@@ -25,8 +25,8 @@ ESU["TAT"] = {
 	"log_start_time_expr":  "<STARTTIME>,0",
 	"log_stop_time_expr":   "<STOPTIME>,0",
 	"TF_state":    "LOGIN",
-	"TF_func":     "S:<TAT-TIME> = <Mon-Time>; <TAT-TIME>=<TAT-FOUND-TIME>; \
-					<TAT-STOP>=<Mon-BusStop>",
+	"TF_func":     "S:<TAT-TIME>=<TAT-FOUND-TIME>; \
+					<ARRIVE-STOP>=<Mon-BusStop>; <LEAVE-STOP>=<Mon-TermStop>;",
 	"TN_state":    "STOP"
 }
 ESU["LOGIN"] = {
@@ -44,7 +44,7 @@ ESU["LOGIN"] = {
 ESU["LEAVE"] = {
 	"esu_mode":             "SEARCH_EVENT:First",
 	"log_filename_expr":    "ITS_4_buses.csv",
-	"log_varexprs":         "<LAST-Bus-Id>==<Mon-Bus-Id> and <LAST-Bus-StopOut>==<Bus-TStop>",
+	"log_varexprs":         "<LAST-Bus-Id>==<Mon-Bus-Id> and <LAST-Bus-StopOut>==<LEAVE-STOP>",
 	"log_timecol_name":     "Bus-Time",
 	"log_start_time_expr":  "<LEAVE-START-TIME>,0",
 	"log_stop_time_expr":   "<TAT-TIME>,+<MAX-TAT-ARRIVE>",
@@ -55,7 +55,7 @@ ESU["ARRIVE"] = {
 	"esu_mode":             "SEARCH_EVENT:First",
 	"log_filename_expr":    "ITS_4_buses.csv",
 	"log_varexprs":         "<LAST-Bus-Id>==<Mon-Bus-Id> and \
-							<LAST-Bus-StopIn>==<Mon-BusStop>",
+							<LAST-Bus-StopIn>==<ARRIVE-STOP>",
 	"log_timecol_name":     "Bus-Time",
 	"log_start_time_expr":  "<LEAVE-FOUND-TIME>,0",
 	"log_stop_time_expr":   "<TAT-FOUND-TIME>,+<MAX-TAT-ARRIVE>",
@@ -82,7 +82,7 @@ ESU["TAT2"] = {
 	"log_start_time_expr":  "<TAT-TIME>,1",
 	"log_stop_time_expr":   "<STOPTIME>,0",
 	"TF_state":    "LEAVE",
-	"TF_func":     "S:<TAT-TIME>=<TAT2-FOUND-TIME>; <TAT-STOP>=<Mon-BusStop>",
+	"TF_func":     "S:<TAT-TIME>=<TAT2-FOUND-TIME>; <ARRIVE-STOP>=<Mon-BusStop>",
 	"TN_state":    "STOP"
 }
 STOP = {
@@ -92,7 +92,7 @@ STOP = {
 def start():
 	set_datetime_variable("STARTTIME","STARTTIME-DATE","STARTTIME-TIME")
 	set_datetime_variable("STOPTIME","STOPTIME-DATE","STOPTIME-TIME")
-	set_sbk_file("ITS_4","BUS","LINE","TAT-STOP","LOGIN-FOUND-TIME",
+	set_sbk_file("ITS_4","BUS","LINE","ARRIVE-STOP","LOGIN-FOUND-TIME",
 		"LEAVE-FOUND-TIME","TAT-TIME","AD-FOUND-TIME","ARRIVE-FOUND-TIME")
 def exit_error():
 	print("exit_error")

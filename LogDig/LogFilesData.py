@@ -270,7 +270,10 @@ class LogFilesData:
 				#if new_line_timestamp <= start_time:
 
 				# Toimiiko INDIRECT-lokeilla ??
-				if new_line_timestamp <= start_time and same_time_counter == 0:
+				#if new_line_timestamp <= start_time and same_time_counter == 0:
+				
+				# 29.11.2018 Esa. Toimii myos, jos taytyy peruuttaa tiedoston ensimmaiseen riviin asti.
+				if index == 0 or (new_line_timestamp <= start_time and same_time_counter == 0):
 
 					print(" >>>> LogFilesData: search_line_index: Backward: cur_ind=%s, cur_time=%s, new_ind=%s, new_time=%s, same_time_cnt=%s, search_count=%s" %
 							(current_line_index,current_line_timestamp,index,new_line_timestamp,same_time_counter,search_count))
