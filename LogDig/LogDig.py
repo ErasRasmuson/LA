@@ -18,12 +18,16 @@ import os.path
 import sys
 import time
 import re
-from datetime import datetime
+
+# Esa 25.4.2019
+#from datetime import datetime
+from datetime import datetime, timedelta
+
 import configparser
 
 lib_path = os.path.abspath(os.path.join('..', 'LogCom'))
 sys.path.append(lib_path)
-from LogGUI import *
+#from LogGUI import *
 from MapGEkml import *
 
 g_version = "$Id$"
@@ -1093,13 +1097,15 @@ class BMU:
 	event_last_stop_timestamp = {}
 	bmu_run_counter = 0
 
-	color_list_counter = 0
-	color_list = [QColor(255,0,0,127),
-				  QColor(0,255,0,127),
-				  QColor(0,0,255,127),
-				  QColor(255,0,255,127),
-				  QColor(0,255,255,127),
-				  QColor(0,0,0,127)]
+	# Esa 25.4.2019
+	#color_list_counter = 0
+	#color_list = [QColor(255,0,0,127),
+	#			  QColor(0,255,0,127),
+	#			  QColor(0,0,255,127),
+	#			  QColor(255,0,255,127),
+	#			  QColor(0,255,255,127),
+	#			  QColor(0,0,0,127)]
+	color_list = {}
 
 	state_found_counter_array = {}
 	state_not_found_counter_array = {}
@@ -1125,6 +1131,16 @@ class BMU:
 				 state_position_variables,state_type,state_start_time_limit,state_stop_time_limit,state_timewindow_event_count_max,
 				 gui_enable,gui_seq_draw_mode,ge_kml_enable,gui,state_GUI_line_num,analyzing_mode,output_files_path,
 				 logfiles_data):
+
+		# Esa 25.4.2019
+		if gui_enable == 1:
+			self.color_list_counter = 0
+			self.color_list = [QColor(255,0,0,127),
+						  QColor(0,255,0,127),
+						  QColor(0,0,255,127),
+						  QColor(255,0,255,127),
+						  QColor(0,255,255,127),
+						  QColor(0,0,0,127)]	
 				 
 		self.analyze_file_mode=analyze_file_mode
 		#print("self.analyze_file_mode = %s\n" % self.analyze_file_mode)		
@@ -1212,6 +1228,11 @@ class BMU:
 	def drawEventSequence(self):
 
 		#print(" ******* drawEventSequence: trace-counter: %s" % self.trace_cnt)
+
+		# Esa 25.4.2019
+		if self.gui_enable == 0:
+			print(" ******* drawEventSequence: GUI not enabled %s")
+			return
 
 		state_cnt = 0
 
