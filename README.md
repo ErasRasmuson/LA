@@ -8,3 +8,6 @@ https://scholar.google.fi/citations?user=u-3e-iUAAAAJ&hl=fi&oi=sra
 
 Esa Heikkinen
 26.7.2018
+
+Docker version is under development in new docker-version -branch. ITS 4 -case seems to work with Docker.
+26.4.2019
