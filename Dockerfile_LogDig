@@ -1,32 +1,37 @@
 FROM python:3.6.8
 
-#ARG MY_PATH
-ENV MY_PATH="/home/LA"
+ARG HOST_UID
+
+#RUN groupadd -r LA && \
+#    useradd --no-log-init -r -m -u "$HOST_UID" -g LA LA
+
+ENV LA_PATH="/home/LA"
+
+#ENV PATH="${PATH}:${LA_PATH}/.local/bin"
 
 RUN apt-get update && \
     apt-get install gettext -y
 
-#RUN apt install libgl1-mesa-glx
+#USER LA
 
-COPY ./LogDig/LogDig.py ${MY_PATH}/LogDig/
-COPY ./LogDig/LogDig.ini ${MY_PATH}/LogDig/
-COPY ./LogDig/logdig_docker.sh ${MY_PATH}/LogDig/start.sh
-COPY ./LogDig/LogFilesData.py ${MY_PATH}/LogDig/
-
-COPY ./LogAna/logdig_analyze_template.py ${MY_PATH}/LogAna/
-COPY ./LogAna/ITS_4_back.py ${MY_PATH}/LogAna/
-
-COPY ./LogCom/LogGUI.py ${MY_PATH}/LogCom/
-COPY ./LogCom/MapGEkml.py ${MY_PATH}/LogCom/
+# Files of log file analyzer
+COPY ./LogDig/LogDig.py ${LA_PATH}/LogDig/
+COPY ./LogDig/LogDig.ini ${LA_PATH}/LogDig/
+COPY ./LogDig/logdig_docker.sh ${LA_PATH}/LogDig/start.sh
+COPY ./LogDig/LogFilesData.py ${LA_PATH}/LogDig/
+COPY ./LogAna/logdig_analyze_template.py ${LA_PATH}/LogAna/
+COPY ./LogCom/MapGEkml.py ${LA_PATH}/LogCom/
+# Should be removed ?
+COPY ./LogCom/LogGUI.py ${LA_PATH}/LogCom/
 
 RUN pip install --upgrade pip
 RUN pip3 install --upgrade pip
 
 RUN pip install configparser
-RUN pip3 install PyQt5==5.10
 RUN pip install psutil
+# Should be removed ?
+RUN pip3 install PyQt5==5.10
 
-WORKDIR ${MY_PATH}/LogDig/
+WORKDIR ${LA_PATH}/LogDig/
 
-#CMD start.sh
-
+CMD ${LA_PATH}/LogDig/start.sh

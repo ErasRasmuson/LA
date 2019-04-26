@@ -1,15 +1,13 @@
+#!/usr/bin/env bash
+echo "Start: $0"
 
-#!/bin/bash
-echo "Start"
+echo "LA_PATH: ${LA_PATH}"
 
-#MY_PATH="/home/esa/projects/LA"
-echo "MY_PATH: ${MY_PATH}"
-
-SCRIPT_PATH=${MY_PATH}"/LogDig/"
-LOGS_PATH=${MY_PATH}"/LogFile/PreProsessed/ITS/"
-RESULT_PATH=${MY_PATH}"/LogRes/ITS_4/"
-ANALYZE_PATH=${MY_PATH}"/LogAna/"
-ANALYZE_FILE="ITS_4_back"
+SCRIPT_PATH=${LA_PATH}"/LogDig/"
+LOGS_PATH=${LA_PATH}"/LogFile/"
+RESULT_PATH=${LA_PATH}"/LogRes/"
+ANALYZE_PATH=${LA_PATH}"/LogAna/"
+ANALYZE_FILE=$1
 
 python ${SCRIPT_PATH}LogDig.py \
 		-date 06.08.2018 \
