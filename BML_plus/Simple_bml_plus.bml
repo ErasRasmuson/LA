@@ -1,0 +1,61 @@
+VARIABLES {
+    CASENAME         "CEL",
+    STARTTIME-DATE   "2016-06-21",
+    STARTTIME-ORIG   "12:00:00",
+    STOPTIME-ORIG    "12:20:00",
+    LOGFILENUM       "1",
+    EVENT-MAX-LEN    "599"
+}
+
+PATTERN {
+    FROM Logfile_<LOGFILENUM>.csv TIMECOL EV-TIME
+    SELECT SEARCH_EVENT:First
+    START[start()] 
+
+    => BEGIN[] {
+        WHERE LAST-EV-PAR == "B" WITHIN STARTTIME +1 TO STOPTIME
+        NEXT [] {
+            +> END[EV-START = EV-TIME]
+            -> STOP[] ~> STOP[]
+        }}
+
+    => END[] {
+        WHERE LAST-EV-PAR == "E" AND EV-ID == LAST-EV-ID
+        WITHIN EV-START TO STOPTIME
+        NEXT [] {
+            +> BEGIN[EV-STOP = EV-TIME; found_end(); STARTTIME = EV-START;PRINT_RESULT()]
+            -> STOP[] ~> STOP[]
+        }}
+
+    STOP[]
+
+    RESULT { 
+        FILE BMU_CEL,
+        VARIABLES {
+            EV-ID,EV-START,EV-STOP,EV-LEN,EV-STATUS,COUNTER-OK,COUNTER-ERROR
+        }
+    }
+}
+
+FUNCTIONS {
+    start() 
+    {{
+        set_datetime_variable("STARTTIME","STARTTIME-DATE","STARTTIME-ORIG")
+        set_datetime_variable("STOPTIME","STARTTIME-DATE","STOPTIME-ORIG")
+
+        set_counter("COUNTER-OK",0)
+        set_counter("COUNTER-ERROR",0)
+    }}
+
+    found_end()
+    {{
+        set_variable("EV-STATUS","OK")
+        calc_time_diff("TIME-DIFF","EV-LEN","EV-STOP","EV-START")
+        if compare_variable("ERR-TIME","EV-LEN",">","EVENT-MAX-LEN") == 1:
+            set_variable("EV-STATUS","ERR")
+            incr_counter("COUNTER-ERROR")
+        else:
+            incr_counter("COUNTER-OK")
+    }}
+
+}
